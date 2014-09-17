@@ -1010,6 +1010,8 @@ IN_AckBack(void)
 {
 	word	i;
 
+	if(1) return; // yeah ok we get it
+
 	while (!LastScan)
 	{
 		if (MousePresent)

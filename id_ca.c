@@ -35,8 +35,14 @@ loaded into the data segment
 
 // also import some data into here
 #include "static/kdradict.h"
+#include "static/kdredict.h"
 #include "static/kdrmdict.h"
+#include "static/kdrahead.h"
+#include "static/kdrehead.h"
 #define audiodict AUDIODCT
+#define audiohead AUDIOHHD
+#define EGAdict EGADICT
+#define EGAhead EGAHEAD
 #define mapdict MAPDICT
 
 /*
@@ -94,17 +100,19 @@ int			profilehandle;
 */
 
 extern	long	far	CGAhead;
-extern	long	far	EGAhead;
+//extern	long	far	EGAhead;
 extern	byte	CGAdict;
-extern	byte	EGAdict;
+//extern	byte	EGAdict;
 extern	byte	far	maphead;
 //extern	byte	mapdict;
-extern	byte	far	audiohead;
+//extern	byte	far	audiohead;
 //extern	byte	audiodict;
 
 
-long		_seg *grstarts;	// array of offsets in egagraph, -1 for sparse
-long		_seg *audiostarts;	// array of offsets in audio / audiot
+int16_t		*grstarts;	// array of offsets in egagraph, -1 for sparse
+//long		_seg *grstarts;	// array of offsets in egagraph, -1 for sparse
+int16_t		*audiostarts;	// array of offsets in audio / audiot
+//long		_seg *audiostarts;	// array of offsets in audio / audiot
 
 #ifdef GRHEADERLINKED
 huffnode	*grhuffman;
@@ -185,7 +193,9 @@ void CAL_GetGrChunkLength (int chunk)
 boolean CA_FarRead (int handle, byte far *dest, long length)
 {
 	if (length>0xffffl)
+	{
 		Quit ("CA_FarRead doesn't support 64K reads yet!");
+	}
 
 #if 0
 asm		push	ds
@@ -682,6 +692,12 @@ void CAL_SetupGrFile (void)
 
 #ifdef GRHEADERLINKED
 
+#if GRMODE == VGAGR
+	// Use VGA graphics data and modify
+	grhuffman = (huffnode *)&EGAdict;
+	//grstarts = (long _seg *)FP_SEG(&EGAhead);
+	grstarts = (void *)&EGAhead;
+#endif
 #if GRMODE == EGAGR
 	grhuffman = (huffnode *)&EGAdict;
 	grstarts = (long _seg *)FP_SEG(&EGAhead);
@@ -846,7 +862,7 @@ void CAL_SetupAudioFile (void)
 #else
 	audiohuffman = (huffnode *)&audiodict;
 	CAL_OptimizeNodes (audiohuffman);
-	audiostarts = (long _seg *)FP_SEG(&audiohead);
+	audiostarts = (void *)&audiohead;
 #endif
 
 //

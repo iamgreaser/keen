@@ -93,15 +93,15 @@ int ReadPtr(long infile, unsigned PtrType)
 	switch (PtrType & SRC_TYPES)
 	{
 		case SRC_FILE:
-			read(*(int far *)infile,(char *)&returnval,1);
+			read(*(int *)infile,(char *)&returnval,1);
 		break;
 
 		case SRC_FFILE:
-			returnval = getc(*(FILE far **)infile);
+			returnval = getc(*(FILE **)infile);
 		break;
 
 		case SRC_BFILE:
-			returnval = bio_readch((BufferedIO *)*(void far **)infile);
+			returnval = bio_readch((BufferedIO *)*(void **)infile);
 		break;
 
 //		case SRC_IMEM:
@@ -111,7 +111,7 @@ int ReadPtr(long infile, unsigned PtrType)
 
 		case SRC_MEM:
 			//returnval = (unsigned char)*((char far *)*(char far **)infile)++;
-			returnval = (unsigned char)*(*(char far **)infile)++;
+			returnval = (unsigned char)*(*(char **)infile)++;
 		break;
 	}
 

@@ -32,6 +32,8 @@ void VW_MemToScreen(memptr source,unsigned dest,unsigned width,unsigned height)
 {
 	// TODO
 	uint8_t *src = (uint8_t *)source;
+
+	printf("mem2scr %i %i\n", width, height);
 	//
 
 }

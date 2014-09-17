@@ -51,7 +51,9 @@ int UnpackEGAShapeToScreen(struct Shape *SHP,int startx,int starty)
 	Height = SHP->bmHdr.h;
 	while (Height--)
 	{
-		Dst[0] = (MK_FP(0xA000,displayofs));
+		//Dst[0] = (MK_FP(0xA000,displayofs));
+		extern uint8_t vga_emu_mem[];
+		Dst[0] = vga_emu_mem;
 		Dst[0] += ylookup[currenty];
 		Dst[0] += startx;
 		for (loop=1; loop<SHP->bmHdr.d; loop++)

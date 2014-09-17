@@ -477,8 +477,9 @@ USL_ScreenDraw(word x,word y,char *s,byte attr)
 	screen = MK_FP(0xb800,(x * 2) + (y * 80 * 2));
 	while (*s)
 	{
-		*screen++ = *s++;
-		*screen++ = attr;
+		putchar(*s++);
+		//*screen++ = *s++;
+		//*screen++ = attr;
 	}
 }
 
@@ -819,8 +820,11 @@ US_CPrintLine(char *s)
 void
 US_CPrint(char *s)
 {
+	char buffer[128];
 	char	c,*se;
 	word	w,h;
+	memcpy(buffer, s, 128);
+	s = buffer;
 
 	while (*s)
 	{

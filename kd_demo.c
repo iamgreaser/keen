@@ -473,12 +473,13 @@ DemoLoop (void)
 		loadedgame = false;
 
 		FileName1 = "TITLESCR.LBM";
-		if (LoadLIBShape("KDREAMS.CMP", FileName1, &FileShape1))
-			Quit("Can't load TITLE SCREEN");
+		// TODO: actually make these decompress properly
+		//if (LoadLIBShape("KDREAMS.CMP", FileName1, &FileShape1))
+		//	Quit("Can't load TITLE SCREEN");
 #if CREDITS
 		FileName2 = "CREDITS.LBM";
-		if (LoadLIBShape("KDREAMS.CMP", FileName2, &FileShape2))
-			Quit("Can't load CREDITS SCREEN");
+		//if (LoadLIBShape("KDREAMS.CMP", FileName2, &FileShape2))
+		//	Quit("Can't load CREDITS SCREEN");
 #endif
 
 		while (!restartgame && !loadedgame)
@@ -492,14 +493,15 @@ DemoLoop (void)
 
 				VW_SetScreen(0, 0);
 				MoveGfxDst(0, 200);
-				UnpackEGAShapeToScreen(&FileShape1, 0, 0);
+				// TODO: get this working
+				//UnpackEGAShapeToScreen(&FileShape1, 0, 0);
 				VW_ScreenToScreen (64*200,0,40,200);
 
 #if CREDITS
-				if (IN_UserInput(TickBase * 8, false))
+				//if (IN_UserInput(TickBase * 8, false))
 					break;
 #else
-				if (IN_UserInput(TickBase * 4, false))
+				//if (IN_UserInput(TickBase * 4, false))
 					break;
 #endif
 
@@ -512,7 +514,8 @@ DemoLoop (void)
 					break;
 #else
 				MoveGfxDst(0, 200);
-				UnpackEGAShapeToScreen(&FileShape1, 0, 0);
+				// TODO: get this working
+				//UnpackEGAShapeToScreen(&FileShape1, 0, 0);
 				VW_ScreenToScreen (64*200,0,40,200);
 
 				if (IN_UserInput(TickBase * 3, false))

@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along
+ * You should have received a copy of the GNU General Public License aint32_t
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
@@ -27,7 +27,7 @@
 //==========================================================================
 
 #ifndef MakeID
-#define MakeID(a,b,c,d)			(((long)(d)<<24L)|((long)(c)<<16L)|((long)(b)<<8L)|(long)(a))
+#define MakeID(a,b,c,d)			(((int32_t)(d)<<24L)|((int32_t)(c)<<16L)|((int32_t)(b)<<8L)|(int32_t)(a))
 #endif
 
 
@@ -63,13 +63,14 @@ typedef enum LibFileTypes
 //   							SOFTLIB Library File header..
 //
 //						   * This header will NEVER change! *
+//						   lol it just did --GM
 //--------------------------------------------------------------------------
 
 typedef struct SoftLibHdr
 {
-	unsigned Version;									// Library Version Num
-	unsigned FileCount;
-} SoftlibHdr;
+	uint16_t Version;									// Library Version Num
+	uint16_t FileCount;
+} __attribute__((__packed__)) SoftlibHdr;
 
 
 
@@ -85,11 +86,11 @@ typedef struct SoftLibHdr
 typedef struct FileEntryHdr
 {
 	char FileName[SL_FILENAMESIZE];		  	// NOTE : May not be null terminated!
-	unsigned long Offset;
-	unsigned long ChunkLen;
-	unsigned long OrginalLength;
-	short Compression;							// ct_TYPES
-} FileEntryHdr;
+	uint32_t Offset;
+	uint32_t ChunkLen;
+	uint32_t OrginalLength;
+	int16_t Compression;							// ct_TYPES
+} __attribute__((__packed__)) FileEntryHdr;
 
 
 
@@ -99,10 +100,10 @@ typedef struct FileEntryHdr
 
 typedef struct ChunkHeader
 {
-	unsigned long HeaderID;
-	unsigned long OrginalLength;
-	short Compression;								// ct_TYPES
-} ChunkHeader;
+	uint32_t HeaderID;
+	uint32_t OrginalLength;
+	int16_t Compression;								// ct_TYPES
+} __attribute__((__packed__)) ChunkHeader;
 
 
 

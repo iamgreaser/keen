@@ -419,6 +419,10 @@ void MM_GetPtr (memptr *baseptr,unsigned long size)
 
 	needed = (size+15)/16;		// convert size from bytes to paragraphs
 
+	// much easier
+	*baseptr = malloc(needed);
+
+#if 0
 	GETNEWBLOCK;				// fill in start and next after a spot is found
 	mmnew->length = needed;
 	mmnew->useptr = baseptr;
@@ -494,6 +498,7 @@ void MM_GetPtr (memptr *baseptr,unsigned long size)
 	}
 
 	Quit ("Out of memory!  Please make sure you have enough free memory.");
+#endif
 }
 
 //==========================================================================
@@ -512,6 +517,10 @@ void MM_FreePtr (memptr *baseptr)
 {
 	mmblocktype far *scan,far *last;
 
+	// no really this is much easier
+	free(*baseptr);
+
+#if 0
 	last = mmhead;
 	scan = last->next;
 
@@ -530,6 +539,7 @@ void MM_FreePtr (memptr *baseptr)
 	last->next = scan->next;
 
 	FREEBLOCK(scan);
+#endif
 }
 //==========================================================================
 
@@ -581,6 +591,7 @@ void MM_SetPurge (memptr *baseptr, int purge)
 
 void MM_SetLock (memptr *baseptr, boolean locked)
 {
+#if 0
 	mmblocktype far *start;
 
 	start = mmrover;
@@ -601,6 +612,7 @@ void MM_SetLock (memptr *baseptr, boolean locked)
 
 	mmrover->attributes &= ~LOCKBIT;
 	mmrover->attributes |= locked*LOCKBIT;
+#endif
 }
 
 //==========================================================================

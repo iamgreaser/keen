@@ -321,16 +321,16 @@ EXIT_FUNC:;
 memptr LoadLIBFile(char *LibName,char *FileName,memptr *MemPtr)
 {
 	int handle;
-	unsigned long header;
+	uint32_t header;
 	struct ChunkHeader Header;
-	unsigned long ChunkLen;
+	uint32_t ChunkLen;
 	short x;
 	struct FileEntryHdr FileEntry;     			// Storage for file once found
 	struct FileEntryHdr FileEntryHeader;		// Header used durring searching
 	struct SoftLibHdr LibraryHeader;				// Library header - Version Checking
 	boolean FileFound = false;
-	unsigned long id_slib = ID_SLIB;
-	unsigned long id_chunk = ID_CHUNK;
+	uint32_t id_slib = ID_SLIB;
+	uint32_t id_chunk = ID_CHUNK;
 
 
 	//
@@ -338,7 +338,10 @@ memptr LoadLIBFile(char *LibName,char *FileName,memptr *MemPtr)
 	//
 
 	if ((handle = open(LibName,O_RDONLY|O_BINARY, S_IREAD)) == -1)
+	{
+		printf("cannot open \"%s\"\n", LibName);
 		return(NULL);
+	}
 
 
 	//
@@ -347,12 +350,14 @@ memptr LoadLIBFile(char *LibName,char *FileName,memptr *MemPtr)
 
 	if (read(handle,&header,4) == -1)
 	{
+		printf("lib \"%s\" is too small to be a SLIB file\n", LibName);
 		close(handle);
 		return(NULL);
 	}
 
 	if (header != id_slib)
 	{
+		printf("lib \"%s\" is not a SLIB file\n", LibName);
 		close(handle);
 		return(NULL);
 	}

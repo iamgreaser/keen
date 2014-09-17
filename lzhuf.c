@@ -174,20 +174,20 @@ void (*LZH_DecompressDisplayVector)() = NULL;
 //===========================================================================
 	/* pointing children nodes (son[], son[] + 1)*/
 
-int far son[T];
-unsigned code, len;
+int16_t son[T];
+uint16_t code, len;
 
 	//
 	// pointing parent nodes.
 	// area [T..(T + N_CHAR - 1)] are pointers for leaves
 	//
 
-int far prnt[T + N_CHAR];
+int16_t prnt[T + N_CHAR];
 
-unsigned far freq[T + 1];	/* cumulative freq table */
+uint16_t freq[T + 1];	/* cumulative freq table */
 
-unsigned long textsize = 0, codesize = 0, printcount = 0,datasize;
-unsigned char far text_buf[N + F - 1];
+uint32_t textsize = 0, codesize = 0, printcount = 0,datasize;
+unsigned char text_buf[N + F - 1];
 
 
 
@@ -197,8 +197,8 @@ unsigned char far text_buf[N + F - 1];
 
 #if INCLUDE_LZH_COMP
 
-static int match_position,match_length, lson[N + 1], rson[N + 257], dad[N + 1];
-unsigned putbuf = 0;
+static int16_t match_position,match_length, lson[N + 1], rson[N + 257], dad[N + 1];
+uint16_t putbuf = 0;
 unsigned char putlen = 0;
 
 	//
@@ -210,7 +210,7 @@ unsigned char putlen = 0;
 	// encoder table
 	//
 
-unsigned char far p_len[64] = {
+unsigned char p_len[64] = {
 	0x03, 0x04, 0x04, 0x04, 0x05, 0x05, 0x05, 0x05,
 	0x05, 0x05, 0x05, 0x05, 0x06, 0x06, 0x06, 0x06,
 	0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06,
@@ -221,7 +221,7 @@ unsigned char far p_len[64] = {
 	0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08
 };
 
-unsigned char far p_code[64] = {
+unsigned char p_code[64] = {
 	0x00, 0x20, 0x30, 0x40, 0x50, 0x58, 0x60, 0x68,
 	0x70, 0x78, 0x80, 0x88, 0x90, 0x94, 0x98, 0x9C,
 	0xA0, 0xA4, 0xA8, 0xAC, 0xB0, 0xB4, 0xB8, 0xBC,
@@ -245,7 +245,7 @@ unsigned char far p_code[64] = {
 
 #if INCLUDE_LZH_DECOMP
 
-unsigned char far d_code[256] = {
+unsigned char d_code[256] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -280,7 +280,7 @@ unsigned char far d_code[256] = {
 	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F,
 };
 
-unsigned char far d_len[256] = {
+unsigned char d_len[256] = {
 	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
 	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
 	0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
@@ -315,7 +315,7 @@ unsigned char far d_len[256] = {
 	0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
 };
 
-unsigned getbuf = 0;
+uint16_t getbuf = 0;
 unsigned char getlen = 0;
 
 #endif
@@ -901,7 +901,7 @@ static int DecodePosition(long infile_ptr,unsigned long *CompressLength, unsigne
 //---------------------------------------------------------------------------
 // lzhDecompress()
 //---------------------------------------------------------------------------
-long lzhDecompress(void far *infile, void far *outfile, unsigned long OrginalLength, unsigned long CompressLength, unsigned PtrTypes)
+long lzhDecompress(void *infile, void *outfile, unsigned long OrginalLength, unsigned long CompressLength, unsigned PtrTypes)
 {
 	int  i, j, k, r, c;
 	long count;
@@ -973,7 +973,7 @@ long lzhDecompress(void far *infile, void far *outfile, unsigned long OrginalLen
 //---------------------------------------------------------------------------
 // lzhCompress()
 //---------------------------------------------------------------------------
-long lzhCompress(void far *infile, void far *outfile,unsigned long DataLength,unsigned PtrTypes)
+long lzhCompress(void *infile, void *outfile,unsigned long DataLength,unsigned PtrTypes)
 {
 	int  i, c, len, r, s, last_match_length;
 

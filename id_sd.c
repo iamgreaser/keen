@@ -823,7 +823,7 @@ SDL_CheckSS(void)
 	SDL_StartSS();
 
 	lasttime = TimeCount;
-	while (TimeCount < lasttime + 4)
+	//while (TimeCount < lasttime + 4)
 		;
 
 #if 0

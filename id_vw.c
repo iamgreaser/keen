@@ -509,6 +509,9 @@ void VW_DrawSprite(int x, int y, unsigned chunknum)
 #if GRMODE == CGAGR
 	shift = 0;
 #endif
+#if GRMODE == VGAGR
+	shift = 0;
+#endif
 
 	dest = bufferofs + ylookup[y];
 	if (x>=0)
@@ -1199,7 +1202,8 @@ int VW_MarkUpdateBlock (int x1, int y1, int x2, int y2)
 	for (y=yt1;y<=yt2;y++)
 	{
 		for (x=xt1;x<=xt2;x++)
-			*mark++ = 1;			// this tile will need to be updated
+			//*mark++ = 1;			// this tile will need to be updated
+			; // TODO: make this behave
 
 		mark += nextline;
 	}
@@ -1393,6 +1397,9 @@ void VWB_DrawSprite(int x, int y, int chunknum)
 	shift = (x&7)/2;
 #endif
 #if GRMODE == CGAGR
+	shift = 0;
+#endif
+#if GRMODE == VGAGR
 	shift = 0;
 #endif
 
