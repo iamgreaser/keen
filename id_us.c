@@ -45,7 +45,15 @@
 
 // DEBUG - handle LPT3 for Sound Source
 
-#include "ID_HEADS.H"
+#include "id_heads.h"
+
+// also import some data into here
+#include "static/context.h"
+#include "static/gametext.h"
+#include "static/story.h"
+#define gametext GAMETEXT
+#define context CONTEXT
+#define story STORY
 
 #define CTL_M_ADLIBUPPIC	CTL_S_ADLIBUPPIC
 #define CTL_M_ADLIBDNPIC	CTL_S_ADLIBDNPIC
@@ -79,7 +87,7 @@ typedef	struct
 
 //	Hack import for TED launch support
 extern	boolean		tedlevel;
-extern	word		tedlevelnum;
+extern	int		tedlevelnum;
 extern	void		TEDDeath(void);
 static	char		*ParmStrings[] = {"TEDLEVEL",""};
 
@@ -151,7 +159,8 @@ static	boolean		oldleavedriveon;
 		char		c,*s,*t;
 
 
-	di = _DI;
+	//di = _DI;
+	di = 0;
 
 	oldleavedriveon = LeaveDriveOn;
 	LeaveDriveOn = false;
@@ -171,7 +180,8 @@ static	boolean		oldleavedriveon;
 		s = buf;
 	}
 
-	c = peekb(0x40,0x49);	// Get the current screen mode
+	//c = peekb(0x40,0x49);	// Get the current screen mode
+	c = 3;
 	if ((c < 4) || (c == 7))
 		goto oh_kill_me;
 
@@ -184,7 +194,7 @@ static	boolean		oldleavedriveon;
 	VW_UpdateScreen();
 	IN_ClearKeysDown();
 
-asm	sti	// Let the keyboard interrupts come through
+//asm	sti	// Let the keyboard interrupts come through
 
 	while (true)
 	{
@@ -381,7 +391,7 @@ US_Startup(void)
 	if (US_Started)
 		return;
 
-	harderr(USL_HardError);	// Install the fatal error handler
+	//harderr(USL_HardError);	// Install the fatal error handler
 
 	US_InitRndT(true);		// Initialize the random number generator
 
@@ -481,6 +491,7 @@ USL_ScreenDraw(word x,word y,char *s,byte attr)
 static void
 USL_ClearTextScreen(void)
 {
+#if 0
 	// Set to 80x25 color text mode
 	_AL = 3;				// Mode 3
 	_AH = 0x00;
@@ -493,7 +504,7 @@ USL_ClearTextScreen(void)
 	_DH = 24;				// Bottom row
 	_AH = 0x02;
 	geninterrupt(0x10);
-
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -504,7 +515,7 @@ USL_ClearTextScreen(void)
 //
 ///////////////////////////////////////////////////////////////////////////
 void
-US_TextScreen(void)
+US_TextScreen(int argc, char *argv[])
 {
 	word	i,
 			sx,sy;
@@ -513,16 +524,16 @@ US_TextScreen(void)
 
 #define	scr_rowcol(y,x)	{sx = (x) - 1;sy = (y) - 1;}
 #define	scr_aputs(s,a)	USL_ScreenDraw(sx,sy,(s),(a))
-#include "ID_US_S.c"
+#include "id_us_s.c"
 #undef	scr_rowcol
 #undef	scr_aputs
 
 	// Check for TED launching here
-	for (i = 1;i < _argc;i++)
+	for (i = 1;i < argc;i++)
 	{
-		if (US_CheckParm(_argv[i],ParmStrings) == 0)
+		if (US_CheckParm(argv[i],ParmStrings) == 0)
 		{
-			tedlevelnum = atoi(_argv[i + 1]);
+			tedlevelnum = atoi(argv[i + 1]);
 			if (tedlevelnum >= 0)
 			{
 				tedlevel = true;
@@ -718,7 +729,10 @@ US_PrintUnsigned(longword n)
 {
 	char	buffer[32];
 
-	US_Print(ultoa(n,buffer,10));
+	//US_Print(ultoa(n,buffer,10));
+	buffer[31] = '\x00';
+	snprintf(buffer, 31, "%u", n);
+	US_Print(buffer);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -731,7 +745,10 @@ US_PrintSigned(long n)
 {
 	char	buffer[32];
 
-	US_Print(ltoa(n,buffer,10));
+	//US_Print(ltoa(n,buffer,10));
+	buffer[31] = '\x00';
+	snprintf(buffer, 31, "%i", n);
+	US_Print(buffer);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1090,15 +1107,15 @@ US_LineInput(int x,int y,char *buf,char *def,boolean escok,
 		if (cursorvis)
 			USL_XORICursor(x,y,s,cursor);
 
-	asm	pushf
-	asm	cli
+	//asm	pushf
+	//asm	cli
 
 		sc = LastScan;
 		LastScan = sc_None;
 		c = LastASCII;
 		LastASCII = key_None;
 
-	asm	popf
+	//asm	popf
 
 		switch (sc)
 		{
@@ -1507,8 +1524,8 @@ USL_HandleError(int num)
 		strcat(buf,"Unknown");
 	else if (num == ENOMEM)
 		strcat(buf,"Disk is Full");
-	else if (num == EINVFMT)
-		strcat(buf,"File is Incomplete");
+	//else if (num == EINVFMT)
+	//	strcat(buf,"File is Incomplete");
 	else
 		strcat(buf,sys_errlist[num]);
 
@@ -2125,11 +2142,11 @@ USL_CtlCKbdButtonCustom(UserCall call,word i,word n)
 			break;
 		}
 
-		asm	pushf
-		asm	cli
+		//asm	pushf
+		//asm	cli
 		if (LastScan == sc_LShift)
 			LastScan = sc_None;
-		asm	popf
+		//asm	popf
 	} while (!(scan = LastScan));
 	IN_ClearKey(scan);
 	if (scan != sc_Escape)
@@ -2586,7 +2603,7 @@ USL_CtlHButtonCustom(UserCall call,word i,word n)
 
 #ifdef	HELPTEXTLINKED	// Ugly hack because of lack of disk space...
 	{
-extern	char	far gametext,far context,far story;
+//extern	char	*gametext, *context, *story;
 		char	far *buf;
 		memptr	dupe;
 
@@ -2604,7 +2621,8 @@ extern	char	far gametext,far context,far story;
 		}
 
 		MM_GetPtr(&dupe,5600);
-		_fmemcpy((char far *)dupe,buf,5600);
+		//_fmemcpy((char far *)dupe,buf,5600);
+		memcpy(dupe,buf,5600);
 
 		USL_DoHelp(dupe,5600);
 
@@ -3629,7 +3647,9 @@ US_DisplayHighScores(int which)
 			y = PrintY;
 
 		PrintX = x + (7 * 8);
-		ultoa(s->score,buffer,10);
+		//ultoa(s->score,buffer,10);
+		buffer[15] = '\x00';
+		snprintf(buffer, 15, "%u", s->score);
 		for (str = buffer;*str;str++)
 			*str = *str + (129 - '0');	// Used fixed-width numbers (129...)
 		USL_MeasureString(buffer,&w,&h);

@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "KD_DEF.H"
+#include "kd_def.h"
 
 #define BIO_BUFFER_LEN	(512)
 
@@ -60,7 +60,7 @@ int UnpackEGAShapeToScreen(struct Shape *SHP,int startx,int starty)
 
 		for (Plane=0; Plane<SHP->bmHdr.d; Plane++)
 		{
-			outport(0x3c4,((1<<Plane)<<8)|2);
+			//outport(0x3c4,((1<<Plane)<<8)|2);
 
 			BPR = ((SHP->BPR+1) >> 1) << 1;               // IGNORE WORD ALIGN
 			while (BPR)
@@ -192,7 +192,8 @@ void bio_fillbuffer(BufferedIO *bio)
 			bytes_requested = bio_length;
 
 		read(bio->handle,near_buffer,bytes_requested);
-		_fmemcpy(MK_FP(bio->buffer,bytes_read),near_buffer,bytes_requested);
+		//_fmemcpy(MK_FP(bio->buffer,bytes_read),near_buffer,bytes_requested);
+		memcpy(bio->buffer + bytes_read, near_buffer, bytes_requested);
 
 		bio_length -= bytes_requested;
 		bytes_read += bytes_requested;
@@ -203,14 +204,18 @@ void bio_fillbuffer(BufferedIO *bio)
 //
 // SwapLong()
 //
-void SwapLong(long far *Var)
+void SwapLong(long *Var)
 {
-	asm		les	bx,Var
-	asm		mov	ax,[es:bx]
-	asm		xchg	ah,al
-	asm		xchg	ax,[es:bx+2]
-	asm		xchg	ah,al
-	asm 		mov	[es:bx],ax
+	// use an int pointer so we don't break 64-bit builds
+	unsigned int *vv = (unsigned int *)Var;
+
+	unsigned int h, l;
+	h = ((*vv)>>16) & 0xFFFF;
+	l = ((*vv)    ) & 0xFFFF;
+	SwapWord((word *)&h);
+	SwapWord((word *)&l);
+
+	*vv = (l<<16) | h;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -219,10 +224,13 @@ void SwapLong(long far *Var)
 //
 void SwapWord(unsigned int far *Var)
 {
-	asm		les	bx,Var
-	asm		mov	ax,[es:bx]
-	asm		xchg	ah,al
-	asm		mov	[es:bx],ax
+	// now use unsigned short
+	unsigned short *vv = (unsigned short *)Var;
+
+	word h, l;
+	h = ((*vv)>>8) & 0xFF;
+	l = ((*vv)   ) & 0xFF;
+	*vv = (l<<8) | h;
 }
 
 ////////////////////////////////////////////////////////////////////////////

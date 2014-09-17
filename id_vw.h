@@ -19,15 +19,15 @@
 // ID_VW.H
 
 #ifndef __TYPES__
-#include "ID_TYPES.H"
+#include "id_types.h"
 #endif
 
 #ifndef __ID_MM__
-#include "ID_MM.H"
+#include "id_mm.h"
 #endif
 
 #ifndef __ID_GLOB__
-#include "ID_GLOB.H"
+#include "id_glob.h"
 #endif
 
 #define __ID_VW__
@@ -36,6 +36,11 @@
 
 #define	G_P_SHIFT		4	// global >> ?? = pixels
 
+#if GRMODE == VGAGR
+#define	SCREENWIDTH		512
+#define CHARWIDTH		8
+#define TILEWIDTH		16
+#endif
 #if GRMODE == EGAGR
 #define	SCREENWIDTH		64
 #define CHARWIDTH		1
@@ -67,6 +72,21 @@
 #endif
 
 #if GRMODE == EGAGR
+
+#define	MAXSHIFTS		8
+
+#define WHITE			15			// graphics mode independant colors
+#define BLACK			0
+#define FIRSTCOLOR		1
+#define SECONDCOLOR		12
+#define F_WHITE			0			// for XOR font drawing
+#define F_BLACK			15
+#define F_FIRSTCOLOR	14
+#define F_SECONDCOLOR	3
+
+#endif
+
+#if GRMODE == VGAGR
 
 #define	MAXSHIFTS		8
 
@@ -211,7 +231,7 @@ extern	unsigned	**shifttabletable;
 //===========================================================================
 
 
-void	VW_Startup (void);
+void	VW_Startup (int argc, char *argv[]);
 void	VW_Shutdown (void);
 
 cardtype	VW_VideoID (void);
@@ -220,9 +240,23 @@ cardtype	VW_VideoID (void);
 // EGA hardware routines
 //
 
+#if 0
 #define EGAWRITEMODE(x) asm{cli;mov dx,GC_INDEX;mov ax,GC_MODE+256*x;out dx,ax;sti;}
 #define EGABITMASK(x) asm{mov dx,GC_INDEX;mov ax,GC_BITMASK+256*x;out dx,ax;sti;}
 #define EGAMAPMASK(x) asm{cli;mov dx,SC_INDEX;mov ax,SC_MAPMASK+x*256;out dx,ax;sti;}
+#else
+// I think I'll have to rewrite the whole renderer.
+// Which is GOOD in that it will be optimised for more modern systems,
+// but is BAD because that requires A LOT OF WORK.
+#define EGAWRITEMODE(x)
+#define EGABITMASK(x)
+#define EGAMAPMASK(x)
+
+#endif
+
+#define VGAWRITEMODE(x) EGAWRITEMODE(x)
+#define VGABITMASK(x) EGABITMASK(x)
+#define VGAMAPMASK(x) EGAMAPMASK(x)
 
 void 	VW_SetLineWidth(int width);
 void 	VW_SetScreen (unsigned CRTC, unsigned pelpan);
@@ -254,6 +288,18 @@ void VW_ScreenToScreen(unsigned source,unsigned dest,unsigned width,unsigned hei
 //
 
 void VW_DrawTile8(unsigned x, unsigned y, unsigned tile);
+
+#if GRMODE == VGAGR
+
+// TODO: ACTUALLY USE THE RIGHT VALUES AND STUFF
+#define VW_DrawTile8M(x,y,t) \
+	VW_MaskBlock(grsegs[STARTTILE8M],(t)*40,bufferofs+ylookup[y]+(x),1,8,8)
+#define VW_DrawTile16(x,y,t) \
+	VW_MemToScreen(grsegs[STARTTILE16+t],bufferofs+ylookup[y]+(x),2,16)
+#define VW_DrawTile16M(x,y,t) \
+	VW_MaskBlock(grsegs[STARTTILE16M],(t)*160,bufferofs+ylookup[y]+(x),2,16,32)
+
+#endif
 
 #if GRMODE == EGAGR
 

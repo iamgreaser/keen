@@ -18,10 +18,7 @@
 
 // KD_DEF.H
 
-#include "ID_HEADS.H"
-#include <BIOS.H>
-#include "SOFT.H"
-#include "SL_FILE.H"
+#include "id_heads.h"
 
 #define FRILLS	0			// Cut out frills for 360K - MIKE MAYNARD
 
@@ -163,6 +160,12 @@ typedef struct {
 } BufferedIO;
 
 
+// moved headers to here so structs can, well, exist properly
+
+//include <bios.h>
+#include "soft.h"
+#include "sl_file.h"
+
 
 /*
 =============================================================================
@@ -182,8 +185,8 @@ int		DebugKeys (void);
 void	StartupId (void);
 void	ShutdownId (void);
 void	Quit (char *error);
-void	InitGame (void);
-void	main (void);
+void	InitGame (int argc, char *argv[]);
+int	main (int argc, char *argv[]);
 
 
 /*

@@ -46,7 +46,7 @@ EMS / XMS unmanaged routines
 =============================================================================
 */
 
-#include "ID_HEADS.H"
+#include "id_heads.h"
 #pragma hdrstop
 
 /*
@@ -66,7 +66,10 @@ EMS / XMS unmanaged routines
 
 typedef struct mmblockstruct
 {
-	unsigned	start,length;
+	//unsigned	start,length;
+	void 		*start;
+	unsigned 	length;
+
 	unsigned	attributes;
 	memptr		*useptr;	// pointer to the segment start
 	struct mmblockstruct far *next;
@@ -137,6 +140,7 @@ boolean MML_CheckForEMS (void)
 {
   char	emmname[9] = "EMMXXXX0";
 
+#if 0
 asm	mov	dx,OFFSET emmname
 asm	mov	ax,0x3d00
 asm	int	0x21		// try to open EMMXXXX0 device
@@ -161,11 +165,13 @@ asm	jz	error
 asm	mov	ah,0x3e
 asm	int	0x21		// close handle
 asm	jc	error
+#endif
 
 //
 // EMS is good
 //
   return true;
+  // OF COURSE IT'S GOOD, WE HAVE A FEW GIGABYTES OF RAM THESE DAYS
 
 error:
 //
@@ -254,7 +260,9 @@ void MM_Startup (void)
 	int i;
 	unsigned 	long length;
 	void far 	*start;
-	unsigned 	segstart,seglength,endfree;
+	//unsigned 	segstart,seglength,endfree;
+	unsigned 	seglength;
+	void 	 	*segstart,*endfree;
 
 	if (mmstarted)
 		MM_Shutdown ();
@@ -274,7 +282,8 @@ void MM_Startup (void)
 //
 // get all available near conventional memory segments
 //
-	length=coreleft();
+	//length=coreleft();
+	length=512<<10;// JUST ALLOCATE 512KB
 	start = (void far *)(nearheap = malloc(length));
 
 	length -= 16-(FP_OFF(start)&15);
@@ -296,8 +305,10 @@ void MM_Startup (void)
 //
 // get all available far conventional memory segments
 //
-	length=farcoreleft();
-	start = farheap = farmalloc(length);
+	//length=farcoreleft();
+	length=12<<20;// JUST ALLOCATE 12MB
+	//start = farheap = farmalloc(length);
+	start = farheap = malloc(length);
 
 	length -= 16-(FP_OFF(start)&15);
 	length -= SAVEFARHEAP;
@@ -350,7 +361,7 @@ void MM_Startup (void)
 	// from end of far heap or EMS/XMS to 0xffff
 	GETNEWBLOCK;
 	mmnew->start = endfree;
-	mmnew->length = 0xffff-endfree;
+	mmnew->length = 0xffff-(int)endfree;
 	mmnew->attributes = LOCKBIT;
 	mmnew->next = NULL;
 	mmrover->next = mmnew;
@@ -380,7 +391,8 @@ void MM_Shutdown (void)
   if (!mmstarted)
 	return;
 
-  farfree (farheap);
+  //farfree (farheap);
+  free (farheap);
   free (nearheap);
   MML_ShutdownEMS ();
   MML_ShutdownXMS ();
@@ -606,7 +618,8 @@ void MM_SetLock (memptr *baseptr, boolean locked)
 void MM_SortMem (void)
 {
 	mmblocktype far *scan,far *last,far *next;
-	unsigned	start,length,source,dest;
+	unsigned	start,length;
+	void *source, *dest;
 
 	VW_ColorBorder (15);
 
@@ -649,12 +662,14 @@ void MM_SortMem (void)
 					dest = start;
 					while (length > 0xf00)
 					{
-						movedata(source,0,dest,0,0xf00*16);
+						//movedata(source,0,dest,0,0xf00*16);
+						memcpy(dest, source, 0xF00*16);
 						length -= 0xf00;
 						source += 0xf00;
 						dest += 0xf00;
 					}
-					movedata(source,0,dest,0,length*16);
+					//movedata(source,0,dest,0,length*16);
+					memcpy(dest, source, length*16);
 
 					scan->start = start;
 					*(unsigned *)scan->useptr = start;

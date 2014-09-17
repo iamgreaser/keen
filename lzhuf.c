@@ -43,13 +43,15 @@
 
 
 #include <fcntl.h>
-#include <io.h>
+//include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <alloc.h>
-#include <dos.h>
+//include <alloc.h>
+//include <dos.h>
+
+#include "id_heads.h"
 
 #include "lzhuff.h"
 #include "jam_io.h"
@@ -909,7 +911,7 @@ long lzhDecompress(void far *infile, void far *outfile, unsigned long OrginalLen
 	getlen = 0;
 
 	if (textsize == 0)
-		return;
+		return 0;
 
 	StartHuff();
 	for (i = 0; i < N - F; i++)

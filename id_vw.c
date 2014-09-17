@@ -18,7 +18,7 @@
 
 // ID_VW.C
 
-#include "ID_HEADS.H"
+#include "id_heads.h"
 
 /*
 =============================================================================
@@ -31,6 +31,12 @@
 #define VIEWWIDTH		40
 
 #define PIXTOBLOCK		4		// 16 pixels to an update block
+
+#if GRMODE == VGAGR
+#define SCREENXMASK		(~0)
+#define SCREENXPLUS		(0)
+#define SCREENXDIV		(1)
+#endif
 
 #if GRMODE == EGAGR
 #define SCREENXMASK		(~7)
@@ -107,16 +113,16 @@ extern	unsigned	bufferwidth,bufferheight;	// used by font drawing stuff
 
 static	char *ParmStrings[] = {"HIDDENCARD",""};
 
-void	VW_Startup (void)
+void	VW_Startup (int argc, char *argv[])
 {
 	int i;
 
-	asm	cld;
+	//asm	cld;
 
 	videocard = 0;
 
-	for (i = 1;i < _argc;i++)
-		if (US_CheckParm(_argv[i],ParmStrings) == 0)
+	for (i = 1;i < argc;i++)
+		if (US_CheckParm(argv[i],ParmStrings) == 0)
 		{
 			videocard = EGAcard;
 			break;
@@ -175,6 +181,7 @@ void	VW_Shutdown (void)
 
 void VW_SetScreenMode (int grmode)
 {
+#if 0
 	switch (grmode)
 	{
 	  case TEXTGR:  _AX = 3;
@@ -204,6 +211,7 @@ void VW_SetScreenMode (int grmode)
 		  break;
 #endif
 	}
+#endif
 	VW_SetLineWidth(SCREENWIDTH);
 }
 
@@ -226,10 +234,12 @@ char colors[7][17]=
 
 void VW_ColorBorder (int color)
 {
+#if 0
 	_AH=0x10;
 	_AL=1;
 	_BH=color;
 	geninterrupt (0x10);
+#endif
 	bordercolor = color;
 }
 
@@ -237,10 +247,12 @@ void VW_SetDefaultColors(void)
 {
 #if GRMODE == EGAGR
 	colors[3][16] = bordercolor;
+#if 0
 	_ES=FP_SEG(&colors[3]);
 	_DX=FP_OFF(&colors[3]);
 	_AX=0x1002;
 	geninterrupt(0x10);
+#endif
 	screenfaded = false;
 #endif
 }
@@ -254,10 +266,12 @@ void VW_FadeOut(void)
 	for (i=3;i>=0;i--)
 	{
 	  colors[i][16] = bordercolor;
+#if 0
 	  _ES=FP_SEG(&colors[i]);
 	  _DX=FP_OFF(&colors[i]);
 	  _AX=0x1002;
 	  geninterrupt(0x10);
+#endif
 	  VW_WaitVBL(6);
 	}
 	screenfaded = true;
@@ -273,10 +287,12 @@ void VW_FadeIn(void)
 	for (i=0;i<4;i++)
 	{
 	  colors[i][16] = bordercolor;
+#if 0
 	  _ES=FP_SEG(&colors[i]);
 	  _DX=FP_OFF(&colors[i]);
 	  _AX=0x1002;
 	  geninterrupt(0x10);
+#endif
 	  VW_WaitVBL(6);
 	}
 	screenfaded = false;
@@ -291,10 +307,12 @@ void VW_FadeUp(void)
 	for (i=3;i<6;i++)
 	{
 	  colors[i][16] = bordercolor;
+#if 0
 	  _ES=FP_SEG(&colors[i]);
 	  _DX=FP_OFF(&colors[i]);
 	  _AX=0x1002;
 	  geninterrupt(0x10);
+#endif
 	  VW_WaitVBL(6);
 	}
 	screenfaded = true;
@@ -309,10 +327,12 @@ void VW_FadeDown(void)
 	for (i=5;i>2;i--)
 	{
 	  colors[i][16] = bordercolor;
+#if 0
 	  _ES=FP_SEG(&colors[i]);
 	  _DX=FP_OFF(&colors[i]);
 	  _AX=0x1002;
 	  geninterrupt(0x10);
+#endif
 	  VW_WaitVBL(6);
 	}
 	screenfaded = false;
@@ -341,11 +361,13 @@ void VW_SetLineWidth (int width)
 //
 // set wide virtual screen
 //
+#if 0
 asm	mov	dx,CRTC_INDEX
 asm	mov	al,CRTC_OFFSET
 asm mov	ah,[BYTE PTR width]
 asm	shr	ah,1
 asm	out	dx,ax
+#endif
 #endif
 
 //
@@ -379,12 +401,14 @@ void	VW_ClearVideo (int color)
 	EGAMAPMASK(15);
 #endif
 
+#if 0
 asm	mov	es,[screenseg]
 asm	xor	di,di
 asm	mov	cx,0xffff
 asm	mov	al,[BYTE PTR color]
 asm	rep	stosb
 asm	stosb
+#endif
 
 #if GRMODE == EGAGR
 	EGAWRITEMODE(0);
@@ -537,6 +561,7 @@ void VW_Hlin(unsigned xl, unsigned xh, unsigned y, unsigned color)
 
 	maskleft&=maskright;
 
+#if 0
 	asm	mov	es,[screenseg]
 	asm	mov	di,[dest]
 
@@ -547,10 +572,12 @@ void VW_Hlin(unsigned xl, unsigned xh, unsigned y, unsigned color)
 
 	asm	mov	al,[BYTE PTR color]
 	asm	xchg	al,[es:di]	// load latches and write pixels
+#endif
 
 	goto	done;
   }
 
+#if 0
 asm	mov	es,[screenseg]
 asm	mov	di,[dest]
 asm	mov	dx,GC_INDEX
@@ -585,6 +612,7 @@ asm	mov	ah,[BYTE PTR maskright]
 asm	out	dx,ax		// mask off pixels
 
 asm	xchg	bh,[es:di]	// load latches and write pixels
+#endif
 
 done:
 	EGABITMASK(255);
@@ -730,6 +758,7 @@ void VW_Bar (unsigned x, unsigned y, unsigned width, unsigned height,
 
 		maskleft&=maskright;
 
+#if 0
 	asm	mov	es,[screenseg]
 	asm	mov	di,[dest]
 
@@ -746,10 +775,12 @@ yloop1:
 	asm	add	di,dx			// down to next line
 	asm	dec	[height]
 	asm	jnz	yloop1
+#endif
 
 		goto	done;
 	}
 
+#if 0
 asm	mov	es,[screenseg]
 asm	mov	di,[dest]
 asm	mov	bh,[BYTE PTR color]
@@ -793,6 +824,7 @@ asm	xchg	al,[es:di]	// load latches and write pixels
 asm	add	di,si		// move to start of next line
 asm	dec	[height]
 asm	jnz	yloop2
+#endif
 
 done:
 	EGABITMASK(255);
@@ -817,7 +849,7 @@ VWL_MeasureString (char far *string, word *width, word *height, fontstruct _seg 
 {
 	*height = font->height;
 	for (*width = 0;*string;string++)
-		*width += font->width[*string];		// proportional width
+		*width += font->width[(int)(unsigned char)*string];		// proportional width
 }
 
 void	VW_MeasurePropString (char far *string, word *width, word *height)
@@ -1194,6 +1226,7 @@ void VW_UpdateScreen (void)
 #if GRMODE == EGAGR
 	VWL_UpdateScreenBlocks();
 
+#if 0
 asm	cli
 asm	mov	cx,[displayofs]
 asm	add	cx,[panadjust]
@@ -1210,6 +1243,7 @@ asm	mov	al,cl
 asm	inc	dx
 asm	out	dx,al
 asm	sti
+#endif
 
 #endif
 #if GRMODE == CGAGR

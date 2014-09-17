@@ -19,33 +19,57 @@
 // ID_GLOB.H
 
 
-#include <ALLOC.H>
+//include <alloc.h>
 #include <ctype.h>
-#include <DOS.H>
-#include <ERRNO.H>
-#include <FCNTL.H>
-#include <IO.H>
-#include <MEM.H>
-#include <process.h>
-#include <STDIO.H>
-#include <STDLIB.H>
-#include <STRING.H>
-#include <SYS\STAT.H>
+//include <dos.h>
+#include <errno.h>
+#include <fcntl.h>
+//include <io.h>
+//include <mem.h>
+//include <process.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdint.h>
 
+// work around a few DOS-isms
+#define _seg
+#define far
+#define huge
+#define O_BINARY 0
+#define interrupt
+
+// a few more DOSisms
+#define MK_FP(seg,ofs) ((void *)((((long)(seg))<<4)+(ofs)))
+#define FP_SEG(v) 0
+#define FP_OFF(v) (long)v
+
+// yet more DOSisms, actually these are IBM BIOSisms now
+#define inportb(a) 0
+#define outportb(a, v)
 #define __ID_GLOB__
 
-#define	EXTENSION	"KDR"
+// now for some MS-isms
+#define stricmp strcasecmp
 
-#include "GRAPHKDR.H"
-#include "AUDIOKDR.H"
+#define	EXTENSION	"kdr"
+
+#include "graphkdr.h"
+#include "audiokdr.h"
 
 #define	TEXTGR	0
 #define	CGAGR	1
 #define	EGAGR	2
 #define	VGAGR	3
 
-#define GRMODE	EGAGR
+#define GRMODE	VGAGR
 
+#if GRMODE == VGAGR
+#define GREXT	"VGA"
+#endif
 #if GRMODE == EGAGR
 #define GREXT	"EGA"
 #endif
@@ -83,13 +107,17 @@ typedef	struct
 
 #endif
 
-#include "ID_MM.H"
-#include "ID_CA.H"
-#include "ID_VW.H"
-#include "ID_RF.H"
-#include "ID_IN.H"
-#include "ID_SD.H"
-#include "ID_US.H"
+// extra functions not really in a proper place right now
+// mostly for compat
+int filelength(int handle);
+
+#include "id_mm.h"
+#include "id_ca.h"
+#include "id_vw.h"
+#include "id_rf.h"
+#include "id_in.h"
+#include "id_sd.h"
+#include "id_us.h"
 
 
 

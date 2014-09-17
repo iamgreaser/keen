@@ -20,10 +20,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <alloc.h>
+//include <alloc.h>
 #include <fcntl.h>
-#include <dos.h>
-#include <io.h>
+//include <dos.h>
+//include <io.h>
 
 #include "kd_def.h"
 //#include "gelib.h"
@@ -32,11 +32,7 @@
 #include "lzhuff.h"
 #include "jam_io.h"
 
-
 BufferedIO lzwBIO;
-
-
-
 
 //===========================================================================
 //
@@ -275,7 +271,8 @@ int LoadLIBShape(char *SLIB_Filename, char *Filename,struct Shape *SHP)
 			MM_GetPtr(&SHP->Data,size);
 			if (!SHP->Data)
 				goto EXIT_FUNC;
-			movedata(FP_SEG(ptr),FP_OFF(ptr),FP_SEG(SHP->Data),0,size);
+			//movedata(FP_SEG(ptr),FP_OFF(ptr),FP_SEG(SHP->Data),0,size);
+			memcpy(SHP->Data,ptr,size);
 			ptr += ChunkLen;
 
 			break;

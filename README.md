@@ -21,13 +21,30 @@ This release was made possible by a crowdfunding effort.  It is brought to you b
 
 ## Compiling
 
+Code is being ported to C, using SDL to provide the stuff that would normally be provided directly by DOS. There's **a lot** of crap that needs gutting out and/or rewriting. This also means I have to write a set of VGA routines. Why? Well:
+
+* The original CGA and EGA code uses an awful lot of inline asm which I have to rewrite.
+* VGA is the easiest of the 3 commonly used adaptors to support.
+* SDL actually has support for 8bpp chunky paletted graphics, which is what VGA does.
+
+Anyway, GNU make should work. BSD make isn't guaranteed to work. I'm using the clang compiler to build this on FreeBSD - ports to other platforms will happen later.
+
+To build:
+
+    cd static
+    ./make.sh
+    cd ..
+    gmake
+
+### Original text follows...
+
 The code is designed for Borland C++ 2.0, but all revisions compiled fine under 3.1 at the time of release.
 
 There is some data that must be compiled into the binary.  This data is located in the static directory.  To prepare the source for building, make sure Borland C++ is in your *PATH* and then run `make.bat`.
 
 You may now go to the root directory and type `bc` to open the project and build.  You may need to configure your directories in Borland for it to compile properly.
 
-### EGA/CGA Version
+#### EGA/CGA Version
 
 Version 1.00 can be built for either EGA or CGA by changing a constant.  All later versions are specific to one mode.  The constant is `GRMODE` in ID_HEADS.H and ID_ASM.EQU.  Finally ensure that the proper static data files are being linked.  KDREDICT.OBJ/KDREHEAD.OBJ for EGA and KDRCDICT.OBJ/KDRCHEAD.OBJ for CGA.
 

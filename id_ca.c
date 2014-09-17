@@ -30,8 +30,14 @@ loaded into the data segment
 =============================================================================
 */
 
-#include "ID_HEADS.H"
+#include "id_heads.h"
 #pragma hdrstop
+
+// also import some data into here
+#include "static/kdradict.h"
+#include "static/kdrmdict.h"
+#define audiodict AUDIODCT
+#define mapdict MAPDICT
 
 /*
 =============================================================================
@@ -92,9 +98,9 @@ extern	long	far	EGAhead;
 extern	byte	CGAdict;
 extern	byte	EGAdict;
 extern	byte	far	maphead;
-extern	byte	mapdict;
+//extern	byte	mapdict;
 extern	byte	far	audiohead;
-extern	byte	audiodict;
+//extern	byte	audiodict;
 
 
 long		_seg *grstarts;	// array of offsets in egagraph, -1 for sparse
@@ -126,6 +132,18 @@ int			audiohandle;	// handle to AUDIOT / AUDIO
 long		chunkcomplen,chunkexplen;
 
 SDMode		oldsoundmode;
+
+// this should probably go somewhere else
+int filelength(int handle)
+{
+	struct stat sb;
+
+	// FIXME: handle this case properly! (needs research)
+	if(fstat(handle, &sb) == -1)
+		return 0;
+	
+	return sb.st_size;
+}
 
 /*
 =============================================================================
@@ -169,6 +187,7 @@ boolean CA_FarRead (int handle, byte far *dest, long length)
 	if (length>0xffffl)
 		Quit ("CA_FarRead doesn't support 64K reads yet!");
 
+#if 0
 asm		push	ds
 asm		mov	bx,[handle]
 asm		mov	cx,[WORD PTR length]
@@ -186,6 +205,7 @@ asm		je	done
 	errno = EINVFMT;			// user manager knows this is bad read
 	return	false;
 done:
+#endif
 	return	true;
 }
 
@@ -205,6 +225,7 @@ boolean CA_FarWrite (int handle, byte far *source, long length)
 	if (length>0xffffl)
 		Quit ("CA_FarWrite doesn't support 64K reads yet!");
 
+#if 0
 asm		push	ds
 asm		mov	bx,[handle]
 asm		mov	cx,[WORD PTR length]
@@ -223,6 +244,7 @@ asm		je	done
 	return	false;
 
 done:
+#endif
 	return	true;
 }
 
@@ -332,6 +354,7 @@ void CAL_HuffExpand (byte huge *source, byte huge *dest,
 // ss:bx node pointer
 //
 
+#if 0
 	if (length <0xfff0)
 	{
 
@@ -451,6 +474,7 @@ asm	jns	expand		// when length = ffff ffff, done
 
 asm	mov	ax,ss
 asm	mov	ds,ax
+#endif
 
 }
 
@@ -572,6 +596,7 @@ void CA_RLEWexpand (unsigned huge *source, unsigned huge *dest,long length,
 // NOTE: A repeat count that produces 0xfff0 bytes can blow this!
 //
 
+#if 0
 asm	mov	bx,rlewtag
 asm	mov	si,sourceoff
 asm	mov	di,destoff
@@ -626,6 +651,7 @@ asm	jb	expand
 
 asm	mov	ax,ss
 asm	mov	ds,ax
+#endif
 
 }
 
@@ -684,7 +710,7 @@ void CAL_SetupGrFile (void)
 //
 // load the data offsets from ???head.ext
 //
-	MM_GetPtr (&(memptr)grstarts,(NUMCHUNKS+1)*4);
+	MM_GetPtr ((memptr)&grstarts,(NUMCHUNKS+1)*4);
 
 	if ((handle = open(GREXT"HEAD."EXTENSION,
 		 O_RDONLY | O_BINARY, S_IREAD)) == -1)
@@ -710,7 +736,7 @@ void CAL_SetupGrFile (void)
 // load the pic and sprite headers into the arrays in the data segment
 //
 #if NUMPICS>0
-	MM_GetPtr(&(memptr)pictable,NUMPICS*sizeof(pictabletype));
+	MM_GetPtr((memptr)&pictable,NUMPICS*sizeof(pictabletype));
 	CAL_GetGrChunkLength(STRUCTPIC);		// position file pointer
 	MM_GetPtr(&compseg,chunkcomplen);
 	CA_FarRead (grhandle,compseg,chunkcomplen);
@@ -719,7 +745,7 @@ void CAL_SetupGrFile (void)
 #endif
 
 #if NUMPICM>0
-	MM_GetPtr(&(memptr)picmtable,NUMPICM*sizeof(pictabletype));
+	MM_GetPtr((memptr)&picmtable,NUMPICM*sizeof(pictabletype));
 	CAL_GetGrChunkLength(STRUCTPICM);		// position file pointer
 	MM_GetPtr(&compseg,chunkcomplen);
 	CA_FarRead (grhandle,compseg,chunkcomplen);
@@ -728,7 +754,7 @@ void CAL_SetupGrFile (void)
 #endif
 
 #if NUMSPRITES>0
-	MM_GetPtr(&(memptr)spritetable,NUMSPRITES*sizeof(spritetabletype));
+	MM_GetPtr((memptr)&spritetable,NUMSPRITES*sizeof(spritetabletype));
 	CAL_GetGrChunkLength(STRUCTSPRITE);	// position file pointer
 	MM_GetPtr(&compseg,chunkcomplen);
 	CA_FarRead (grhandle,compseg,chunkcomplen);
@@ -764,7 +790,7 @@ void CAL_SetupMapFile (void)
 		 O_RDONLY | O_BINARY, S_IREAD)) == -1)
 		Quit ("Can't open KDREAMS.MAP!");
 	length = filelength(handle);
-	MM_GetPtr (&(memptr)tinf,length);
+	MM_GetPtr ((memptr)&tinf,length);
 	CA_FarRead(handle, tinf, length);
 	close(handle);
 #else
@@ -814,7 +840,7 @@ void CAL_SetupAudioFile (void)
 		 O_RDONLY | O_BINARY, S_IREAD)) == -1)
 		Quit ("Can't open AUDIOHED."EXTENSION"!");
 	length = filelength(handle);
-	MM_GetPtr (&(memptr)audiostarts,length);
+	MM_GetPtr ((memptr)&audiostarts,length);
 	CA_FarRead(handle, (byte far *)audiostarts, length);
 	close(handle);
 #else
@@ -908,7 +934,7 @@ void CA_CacheAudioChunk (int chunk)
 
 	if (audiosegs[chunk])
 	{
-		MM_SetPurge (&(memptr)audiosegs[chunk],0);
+		MM_SetPurge ((memptr)&audiosegs[chunk],0);
 		return;							// allready in memory
 	}
 
@@ -923,7 +949,7 @@ void CA_CacheAudioChunk (int chunk)
 
 #ifndef AUDIOHEADERLINKED
 
-	MM_GetPtr (&(memptr)audiosegs[chunk],compressed);
+	MM_GetPtr ((memptr)&audiosegs[chunk],compressed);
 	CA_FarRead(audiohandle,audiosegs[chunk],compressed);
 
 #else
@@ -942,7 +968,7 @@ void CA_CacheAudioChunk (int chunk)
 
 	expanded = *(long far *)source;
 	source += 4;			// skip over length
-	MM_GetPtr (&(memptr)audiosegs[chunk],expanded);
+	MM_GetPtr ((memptr)&audiosegs[chunk],expanded);
 	CAL_HuffExpand (source,audiosegs[chunk],expanded,audiohuffman);
 
 	if (compressed>BUFFERSIZE)
@@ -984,7 +1010,7 @@ void CA_LoadAllSounds (void)
 
 	for (i=0;i<NUMSOUNDS;i++,start++)
 		if (audiosegs[start])
-			MM_SetPurge (&(memptr)audiosegs[start],3);		// make purgable
+			MM_SetPurge ((memptr)&audiosegs[start],3);		// make purgable
 
 cachein:
 
@@ -1033,6 +1059,7 @@ void CAL_ShiftSprite (unsigned segment,unsigned source,unsigned dest,
 	sheight = height;		// because we are going to reassign bp
 	swidth = width;
 
+#if 0
 asm	mov	ax,[segment]
 asm	mov	ds,ax		// source and dest are in same segment, and all local
 
@@ -1109,6 +1136,7 @@ asm	jnz	dodatarow
 
 asm	mov	ax,ss				// restore data segment
 asm	mov	ds,ax
+#endif
 
 }
 
@@ -1266,6 +1294,12 @@ void CAL_ExpandGrChunk (int chunk, byte far *source)
 	//
 	// expanded sizes of tile8/16/32 are implicit
 	//
+
+// TODO: get a proper EGA->VGA tile conversion system working AND FILL THESE DAMN THINGS IN PROPERLY
+#if GRMODE == VGAGR
+#define BLOCK		32
+#define MASKBLOCK	40
+#endif
 
 #if GRMODE == EGAGR
 #define BLOCK		32
@@ -1446,10 +1480,10 @@ void CA_CacheMap (int mapnum)
 // free up memory from last map
 //
 	if (mapon>-1 && mapheaderseg[mapon])
-		MM_SetPurge (&(memptr)mapheaderseg[mapon],3);
+		MM_SetPurge ((memptr)&mapheaderseg[mapon],3);
 	for (plane=0;plane<3;plane++)
 		if (mapsegs[plane])
-			MM_FreePtr (&(memptr)mapsegs[plane]);
+			MM_FreePtr ((memptr)&mapsegs[plane]);
 
 	mapon = mapnum;
 
@@ -1464,13 +1498,14 @@ void CA_CacheMap (int mapnum)
 		if (pos<0)						// $FFFFFFFF start is a sparse map
 		  Quit ("CA_CacheMap: Tried to load a non existant map!");
 
-		MM_GetPtr(&(memptr)mapheaderseg[mapnum],sizeof(maptype));
+		MM_GetPtr((memptr)&mapheaderseg[mapnum],sizeof(maptype));
 		lseek(maphandle,pos,SEEK_SET);
 
 #ifdef MAPHEADERLINKED
-#if BUFFERSIZE < sizeof(maptype)
-The general buffer size is too small!
-#endif
+// BUFFERSIZE is definitely larger than maptype!
+//if BUFFERSIZE < sizeof(maptype)
+//The general buffer size is too small!
+//endif
 		//
 		// load in, then unhuffman to the destination
 		//
@@ -1482,7 +1517,7 @@ The general buffer size is too small!
 #endif
 	}
 	else
-		MM_SetPurge (&(memptr)mapheaderseg[mapnum],0);
+		MM_SetPurge ((memptr)&mapheaderseg[mapnum],0);
 
 //
 // load the planes in
@@ -1494,7 +1529,7 @@ The general buffer size is too small!
 
 	for (plane = 0; plane<3; plane++)
 	{
-		dest = &(memptr)mapsegs[plane];
+		dest = (memptr)&mapsegs[plane];
 		MM_GetPtr(dest,size);
 
 		pos = mapheaderseg[mapnum]->planestart[plane];

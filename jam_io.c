@@ -20,10 +20,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <alloc.h>
+//include <alloc.h>
 #include <fcntl.h>
-#include <dos.h>
-#include <io.h>
+//include <dos.h>
+//include <io.h>
 
 #include "kd_def.h"
 //#include "gelib.h"
@@ -66,7 +66,8 @@ char WritePtr(long outfile, unsigned char data, unsigned PtrType)
 		break;
 
 		case DEST_MEM:
-			*((char far *)*(char far **)outfile)++ = data;
+			//*((char far *)*(char far **)outfile)++ = data;
+			*(*(char **)outfile)++ = data;
 		break;
 	}
 
@@ -109,7 +110,8 @@ int ReadPtr(long infile, unsigned PtrType)
 //		break;
 
 		case SRC_MEM:
-			returnval = (unsigned char)*((char far *)*(char far **)infile)++;
+			//returnval = (unsigned char)*((char far *)*(char far **)infile)++;
+			returnval = (unsigned char)*(*(char far **)infile)++;
 		break;
 	}
 

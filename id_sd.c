@@ -45,12 +45,12 @@
 
 #pragma hdrstop		// Wierdo thing with MUSE
 
-#include <dos.h>
+//include <dos.h>
 
 #ifdef	_MUSE_      // Will be defined in ID_Types.h
-#include "ID_SD.h"
+#include "id_sd.h"
 #else
-#include "ID_HEADS.H"
+#include "id_heads.h"
 #endif
 #pragma	hdrstop
 #pragma	warn	-pia
@@ -60,8 +60,13 @@
 // Macros for SoundBlaster stuff
 #define	sbOut(n,b)	outportb((n) + sbLocation,b)
 #define	sbIn(n)		inportb((n) + sbLocation)
+#if 0
 #define	sbWriteDelay()	while (sbIn(sbWriteStat) & 0x80);
 #define	sbReadDelay()	while (sbIn(sbDataAvail) & 0x80);
+#else
+#define	sbWriteDelay()
+#define	sbReadDelay()
+#endif
 
 // Macros for AdLib stuff
 #define	selreg(n)	outportb(0x388,n)
@@ -189,12 +194,23 @@ SDL_SetIntsPerSec(word ints)
 static void interrupt
 SDL_TimingService(void)
 {
-	TimerVal = _CX;
+	//TimerVal = _CX;
 	TimerDone++;
 
 	outportb(0x20,0x20);				// Ack interrupt
 }
 
+// No worries, the SDL library provides a timing function called... SDL_Delay...
+// Still, need to set this up...
+void SDL_InitDelay(void)
+{
+	TimerDelay10 =  10;
+	TimerDelay25 =  25;
+	TimerDelay100 = 100;
+}
+
+
+#if 0
 ///////////////////////////////////////////////////////////////////////////
 //
 //	SDL_InitDelay() - Sets up TimerDelay's for SDL_Delay()
@@ -255,6 +271,7 @@ asm	jnz		done
 asm	loop	loop
 done:;
 }
+#endif
 
 //
 //	PC Sound code
@@ -272,14 +289,14 @@ static void
 #endif
 SDL_PCPlaySound(PCSound far *sound)
 {
-asm	pushf
-asm	cli
+//asm	pushf
+//asm	cli
 
 	pcLastSample = -1;
 	pcLengthLeft = sound->common.length;
 	pcSound = sound->data;
 
-asm	popf
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -294,16 +311,16 @@ static void
 #endif
 SDL_PCStopSound(void)
 {
-asm	pushf
-asm	cli
+//asm	pushf
+//asm	cli
 
-	(long)pcSound = 0;
+	pcSound = NULL;
 
-asm	in	al,0x61		  	// Turn the speaker off
-asm	and	al,0xfd			// ~2
-asm	out	0x61,al
+//asm	in	al,0x61		  	// Turn the speaker off
+//asm	and	al,0xfd			// ~2
+//asm	out	0x61,al
 
-asm	popf
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -322,34 +339,34 @@ SDL_PCService(void)
 		s = *pcSound++;
 		if (s != pcLastSample)
 		{
-		asm	pushf
-		asm	cli
+		//asm	pushf
+		//asm	cli
 
 			pcLastSample = s;
 			if (s)					// We have a frequency!
 			{
 				t = pcSoundLookup[s];
-			asm	mov	bx,[t]
+			//asm	mov	bx,[t]
 
-			asm	mov	al,0xb6			// Write to channel 2 (speaker) timer
-			asm	out	43h,al
-			asm	mov	al,bl
-			asm	out	42h,al			// Low byte
-			asm	mov	al,bh
-			asm	out	42h,al			// High byte
+			//asm	mov	al,0xb6			// Write to channel 2 (speaker) timer
+			//asm	out	43h,al
+			//asm	mov	al,bl
+			//asm	out	42h,al			// Low byte
+			//asm	mov	al,bh
+			//asm	out	42h,al			// High byte
 
-			asm	in	al,0x61			// Turn the speaker & gate on
-			asm	or	al,3
-			asm	out	0x61,al
+			//asm	in	al,0x61			// Turn the speaker & gate on
+			//asm	or	al,3
+			//asm	out	0x61,al
 			}
 			else					// Time for some silence
 			{
-			asm	in	al,0x61		  	// Turn the speaker & gate off
-			asm	and	al,0xfc			// ~3
-			asm	out	0x61,al
+			//asm	in	al,0x61		  	// Turn the speaker & gate off
+			//asm	and	al,0xfc			// ~3
+			//asm	out	0x61,al
 			}
 
-		asm	popf
+		//asm	popf
 		}
 
 		if (!(--pcLengthLeft))
@@ -368,14 +385,14 @@ SDL_PCService(void)
 static void
 SDL_ShutPC(void)
 {
-asm	pushf
-asm	cli
+//asm	pushf
+//asm	cli
 
-asm	in	al,0x61		  	// Turn the speaker & gate off
-asm	and	al,0xfc			// ~3
-asm	out	0x61,al
+//asm	in	al,0x61		  	// Turn the speaker & gate off
+//asm	and	al,0xfc			// ~3
+//asm	out	0x61,al
 
-asm	popf
+//asm	popf
 }
 
 //
@@ -557,9 +574,9 @@ SDL_CheckSB(int port)
 	sbLocation = port << 4;		// Initialize stuff for later use
 
 	sbOut(sbReset,true);		// Reset the SoundBlaster DSP
-	SDL_Delay(TimerDelay10);	// Wait 4usec
+	//SDL_Delay(TimerDelay10);	// Wait 4usec
 	sbOut(sbReset,false);		// Turn off sb DSP reset
-	SDL_Delay(TimerDelay100);	// Wait 100usec
+	//SDL_Delay(TimerDelay100);	// Wait 100usec
 	for (i = 0;i < 100;i++)
 	{
 		if (sbIn(sbDataAvail) & 0x80)		// If data is available...
@@ -614,8 +631,8 @@ SDL_DetectSoundBlaster(int port)
 static void
 SDL_StartSB(void)
 {
-	sbOldIntHand = getvect(sbIntVec);	// Get old interrupt handler
-	setvect(sbIntVec,SDL_SBService);	// Set mine
+	//sbOldIntHand = getvect(sbIntVec);	// Get old interrupt handler
+	//setvect(sbIntVec,SDL_SBService);	// Set mine
 
 	sbWriteDelay();
 	sbOut(sbWriteCmd,0xd1);				// Turn on DSP speaker
@@ -631,7 +648,7 @@ SDL_ShutSB(void)
 {
 	SDL_SBStopSample();
 
-	setvect(sbIntVec,sbOldIntHand);		// Set vector back
+	//setvect(sbIntVec,sbOldIntHand);		// Set vector back
 }
 
 //	Sound Source Code
@@ -648,7 +665,7 @@ static void
 #endif
 SDL_SSStopSample(void)
 {
-	(long)ssSample = 0;
+	ssSample = NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -664,10 +681,12 @@ SDL_SSService(void)
 
 	while (ssSample)
 	{
+#if 0
 	asm	mov		dx,[ssStatus]	// Check to see if FIFO is currently empty
 	asm	in		al,dx
 	asm	test	al,0x40
 	asm	jnz		done			// Nope - don't push any more data out
+#endif
 
 		gotit = false;
 		if (ssIsSlow && (ssHoldOver != (word)-1))
@@ -694,7 +713,7 @@ SDL_SSService(void)
 					ssHoldOver = v;
 				if (!(--ssLengthLeft))
 				{
-					(long)ssSample = 0;
+					ssSample = NULL;
 					SDL_SoundFinished();
 				}
 			}
@@ -702,6 +721,7 @@ SDL_SSService(void)
 
 		if (gotit)
 		{
+#if 0
 		asm	mov		dx,[ssData]		// Pump the value out
 		asm	mov		al,[v]
 		asm	out		dx,al
@@ -718,6 +738,7 @@ SDL_SSService(void)
 		asm	pop		ax
 		asm	push	ax
 		asm	pop		ax
+#endif
 		}
 	}
 done:
@@ -736,8 +757,8 @@ static void
 #endif
 SDL_SSPlaySample(SampledSound far *sample)
 {
-asm	pushf
-asm	cli
+//asm	pushf
+//asm	cli
 
 	ssLengthLeft = sample->common.length;
 	ssSample = sample->data;
@@ -746,7 +767,7 @@ asm	cli
 	if (sample->bits < 8)
 		ssIsCompressed = ssCompFirst = true;
 
-asm	popf
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -805,6 +826,7 @@ SDL_CheckSS(void)
 	while (TimeCount < lasttime + 4)
 		;
 
+#if 0
 asm	mov		dx,[ssStatus]	// Check to see if FIFO is currently empty
 asm	in		al,dx
 asm	test	al,0x40
@@ -835,6 +857,7 @@ asm	mov		dx,[ssStatus]	// Is FIFO overflowed now?
 asm	in		al,dx
 asm	test	al,0x40
 asm	jz		checkdone		// Nope, still not - Sound Source not here
+#endif
 
 	present = true;			// Yes - it's here!
 
@@ -862,6 +885,7 @@ SDL_DetectSoundSource(void)
 void
 alOut(byte n,byte b)
 {
+#if 0
 	asm	pushf
 	asm	cli
 
@@ -877,6 +901,7 @@ alOut(byte n,byte b)
 	asm	popf
 
 	SDL_Delay(TimerDelay25);
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -921,13 +946,13 @@ static void
 #endif
 SDL_ALStopSound(void)
 {
-asm	pushf
-asm	cli
+//asm	pushf
+//asm	cli
 
-	(long)alSound = 0;
+	alSound = NULL;
 	alOut(alFreqH + 0,0);
 
-asm	popf
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -945,8 +970,8 @@ SDL_ALPlaySound(AdLibSound far *sound)
 	byte		c,m;
 	Instrument	far *inst;
 
-asm	pushf
-asm	cli
+//asm	pushf
+//asm	cli
 
 	SDL_ALStopSound();
 
@@ -971,7 +996,7 @@ asm	cli
 	alOut(c + alSus,inst->cSus);
 	alOut(c + alWave,inst->cWave);
 
-asm	popf
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -997,7 +1022,7 @@ SDL_ALSoundService(void)
 
 		if (!(--alLengthLeft))
 		{
-			(long)alSound = 0;
+			alSound = NULL;
 			alOut(alFreqH + 0,0);
 			SDL_SoundFinished();
 		}
@@ -1199,7 +1224,8 @@ static	word	count = 1,
 			SoundUserHook();
 
 		// If one of the drives is on, and we're not told to leave it on...
-		if ((peekb(0x40,0x3f) & 3) && !LeaveDriveOn)
+		//if ((peekb(0x40,0x3f) & 3) && !LeaveDriveOn)
+		if(0)
 		{
 			if (!(--drivecount))
 			{
@@ -1211,7 +1237,7 @@ static	word	count = 1,
 					// Wait until it's off
 					while ((peekb(0x40,0x3f) & 3))
 					{
-					asm	pushf
+					//asm	pushf
 						t0OldService();
 					}
 				}
@@ -1289,6 +1315,7 @@ SD_SetSoundMode(SDMode mode)
 
 	SD_StopSound();
 
+	result = false;
 	switch (mode)
 	{
 	case sdm_Off:
@@ -1356,6 +1383,7 @@ SD_SetMusicMode(SMMode mode)
 	while (SD_MusicPlaying())
 		;
 
+	result = false;
 	switch (mode)
 	{
 	case smm_Off:
@@ -1387,7 +1415,7 @@ SD_SetMusicMode(SMMode mode)
 //
 ///////////////////////////////////////////////////////////////////////////
 void
-SD_Startup(void)
+SD_Startup(int argc, char *argv[])
 {
 	int	i;
 
@@ -1400,9 +1428,9 @@ SD_Startup(void)
 	sbNoCheck = false;
 	LeaveDriveOn = false;
 #ifndef	_MUSE_
-	for (i = 1;i < _argc;i++)
+	for (i = 1;i < argc;i++)
 	{
-		switch (US_CheckParm(_argv[i],ParmStrings))
+		switch (US_CheckParm(argv[i],ParmStrings))
 		{
 		case 0:						// No AdLib detection
 			alNoCheck = true;
@@ -1437,11 +1465,11 @@ SD_Startup(void)
 
 	SoundUserHook = 0;
 
-	t0OldService = getvect(8);	// Get old timer 0 ISR
+	//t0OldService = getvect(8);	// Get old timer 0 ISR
 
 	SDL_InitDelay();			// SDL_InitDelay() uses t0OldService
 
-	setvect(8,SDL_t0Service);	// Set to my timer 0 ISR
+	//setvect(8,SDL_t0Service);	// Set to my timer 0 ISR
 	LocalTime = TimeCount = 0;
 
 	SD_SetSoundMode(sdm_Off);
@@ -1548,14 +1576,14 @@ SD_Shutdown(void)
 
 	SDL_ShutDevice();
 
-	asm	pushf
-	asm	cli
+	//asm	pushf
+	//asm	cli
 
 	SDL_SetTimer0(0);
 
-	setvect(8,t0OldService);
+	//setvect(8,t0OldService);
 
-	asm	popf
+	//asm	popf
 	// DEBUG - set the system clock
 
 	SD_Started = false;

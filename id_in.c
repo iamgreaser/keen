@@ -35,7 +35,7 @@
 //	DEBUG - there are more globals
 //
 
-#include "ID_HEADS.H"
+#include "id_heads.h"
 #pragma	hdrstop
 
 #define	KeyInt	9	// The keyboard ISR number
@@ -46,7 +46,8 @@
 #define	MDelta		11
 
 #define	MouseInt	0x33
-#define	Mouse(x)	_AX = x,geninterrupt(MouseInt)
+//define	Mouse(x)	_AX = x,geninterrupt(MouseInt)
+#define	Mouse(x)
 
 // Stuff for the joystick
 #define	JoyScaleMax		32768
@@ -231,8 +232,10 @@ static void
 INL_GetMouseDelta(int *x,int *y)
 {
 	Mouse(MDelta);
+	/*
 	*x = _CX;
 	*y = _DX;
+	*/
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -244,10 +247,10 @@ INL_GetMouseDelta(int *x,int *y)
 static word
 INL_GetMouseButtons(void)
 {
-	word	buttons;
+	word	buttons = 0;
 
 	Mouse(MButtons);
-	buttons = _BX;
+	//buttons = _BX;
 	return(buttons);
 }
 
@@ -270,6 +273,7 @@ IN_GetJoyAbs(word joy,word *xp,word *yp)
 	yb = 1 << ys;
 
 // Read the absolute joystick values
+#if 0
 asm		pushf				// Save some registers
 asm		push	si
 asm		push	di
@@ -323,6 +327,7 @@ asm		mov		[y],di
 asm		pop		di
 asm		pop		si
 asm		popf				// Restore the registers
+#endif
 
 	*xp = x;
 	*yp = y;
@@ -456,8 +461,10 @@ INL_StartKbd(void)
 {
 	IN_ClearKeysDown();
 
+	/*
 	OldKeyVect = getvect(KeyInt);
 	setvect(KeyInt,INL_KeyService);
+	*/
 
 	INL_KeyHook = 0;	// Clear key hook
 }
@@ -470,9 +477,9 @@ INL_StartKbd(void)
 static void
 INL_ShutKbd(void)
 {
-	poke(0x40,0x17,peek(0x40,0x17) & 0xfaf0);	// Clear ctrl/alt/shift flags
+	//poke(0x40,0x17,peek(0x40,0x17) & 0xfaf0);	// Clear ctrl/alt/shift flags
 
-	setvect(KeyInt,OldKeyVect);
+	//setvect(KeyInt,OldKeyVect);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -483,12 +490,12 @@ INL_ShutKbd(void)
 static boolean
 INL_StartMouse(void)
 {
-	if (getvect(MouseInt))
+	/*if (getvect(MouseInt))
 	{
 		Mouse(MReset);
 		if (_AX == 0xffff)
 			return(true);
-	}
+	}*/
 	return(false);
 }
 
@@ -590,19 +597,19 @@ INL_ShutJoy(word joy)
 //
 ///////////////////////////////////////////////////////////////////////////
 void
-IN_Startup(void)
+IN_Startup(int argc, char *argv[])
 {
 	boolean	checkjoys,checkmouse;
-	word	i;
+	int	i;
 
 	if (IN_Started)
 		return;
 
 	checkjoys = true;
 	checkmouse = true;
-	for (i = 1;i < _argc;i++)
+	for (i = 1;i < argc;i++)
 	{
-		switch (US_CheckParm(_argv[i],ParmStrings))
+		switch (US_CheckParm(argv[i],ParmStrings))
 		{
 		case 0:
 			checkjoys = false;

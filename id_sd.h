@@ -167,7 +167,7 @@ extern	boolean		ssIsTandy;					// For config file
 extern	word		ssPort;
 
 // Function prototypes
-extern	void	SD_Startup(void),
+extern	void	SD_Startup(int argc, char *argv[]),
 				SD_Shutdown(void),
 				SD_Default(boolean gotit,SDMode sd,SMMode sm),
 				SD_PlaySound(word sound),

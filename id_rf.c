@@ -32,7 +32,7 @@ updated
 =============================================================================
 */
 
-#include "ID_HEADS.H"
+#include "id_heads.h"
 #pragma hdrstop
 
 /*
@@ -48,6 +48,7 @@ updated
 
 #define	SCREENSPACE		(SCREENWIDTH*240)
 #define FREEEGAMEM		(0x10000l-3l*SCREENSPACE)
+#define FREEVGAMEM		(0x10000l-3l*SCREENSPACE)
 
 //
 // the update array must have enough space for two screens that can float
@@ -60,14 +61,15 @@ updated
 #define	UPDATESPARESIZE		(UPDATEWIDE*2+4)
 #define UPDATESIZE			(UPDATESCREENSIZE+2*UPDATESPARESIZE)
 
+#define G_VGASX_SHIFT	0	// global >> ?? = screen x
 #define G_EGASX_SHIFT	7	// global >> ?? = screen x
 #define G_CGASX_SHIFT	6	// global >> ?? = screen x
 #define G_SY_SHIFT		4	// global >> ?? = screen y
 
-unsigned	SX_T_SHIFT;		// screen x >> ?? = tile EGA = 1, CGA = 2;
+unsigned	SX_T_SHIFT;		// screen x >> ?? = tile EGA = 1, CGA = 2, VGA = 8(?);
 #define	SY_T_SHIFT		4	// screen y >> ?? = tile
 
-
+#define	VGAPORTSCREENWIDE	336
 #define	EGAPORTSCREENWIDE	42
 #define	CGAPORTSCREENWIDE	84
 #define	PORTSCREENHIGH  224
@@ -199,6 +201,9 @@ unsigned	otherpage;
 #if GRMODE == EGAGR
 unsigned	tilecache[NUMTILE16];
 #endif
+#if GRMODE == VGAGR
+unsigned	tilecache[NUMTILE16];
+#endif
 
 spritelisttype	spritearray[MAXSPRITES],*prioritystart[PRIORITIES],
 				*spritefreeptr;
@@ -251,14 +256,14 @@ void RFL_UpdateSprites (void);
 
 static	char *ParmStrings[] = {"comp",""};
 
-void RF_Startup (void)
+void RF_Startup (int argc, char *argv[])
 {
 	int i,x,y;
 	unsigned	*blockstart;
 
 	if (grmode == EGAGR)
-		for (i = 1;i < _argc;i++)
-			if (US_CheckParm(_argv[i],ParmStrings) == 0)
+		for (i = 1;i < argc;i++)
+			if (US_CheckParm(argv[i],ParmStrings) == 0)
 			{
 				compatability = true;
 				break;
@@ -300,6 +305,21 @@ void RF_Startup (void)
 	else if (grmode == CGAGR)
 	{
 		SX_T_SHIFT = 2;
+
+		updateptr = baseupdateptr = &update[0][UPDATESPARESIZE];
+
+		bufferofs = 0;
+		masterofs = 0x8000;
+
+		blockstart = &blockstarts[0];
+		for (y=0;y<UPDATEHIGH;y++)
+			for (x=0;x<UPDATEWIDE;x++)
+				*blockstart++ = SCREENWIDTH*16*y+x*TILEWIDTH;
+	}
+
+	else if (grmode == VGAGR)
+	{
+		SX_T_SHIFT = 8;
 
 		updateptr = baseupdateptr = &update[0][UPDATESPARESIZE];
 
@@ -1030,6 +1050,7 @@ void RF_NewPosition (unsigned x, unsigned y)
 void	RFL_OldRow (unsigned updatespot,unsigned count,unsigned step)
 {
 
+#if 0
 asm	mov	si,[updatespot]			// pointer inside each map plane
 asm	mov	cx,[count]				// number of tiles to clear
 asm	mov	dx,[step]				// move to next tile
@@ -1049,6 +1070,7 @@ asm	loop	clearcache
 
 asm	mov	ax,ss
 asm	mov	ds,ax
+#endif
 
 }
 
@@ -1678,6 +1700,7 @@ void RF_Refresh (void)
 // with an UPDATETERMINATE at the end
 //
 	updatestart[otherpage] = newupdate = baseupdatestart[otherpage];
+#if 0
 asm	mov	ax,ds
 asm	mov	es,ax
 asm	xor	ax,ax
@@ -1685,6 +1708,7 @@ asm	mov	cx,(UPDATESCREENSIZE-2)/2
 asm	mov	di,[newupdate]
 asm	rep	stosw
 asm	mov	[WORD PTR es:di],UPDATETERMINATE
+#endif
 
 	screenpage ^= 1;
 	otherpage ^= 1;
@@ -2353,3 +2377,777 @@ void RF_Refresh (void)
 }
 
 #endif		// GRMODE == CGAGR
+
+/*
+=============================================================================
+
+					VGA specific routines
+
+=============================================================================
+*/
+
+#if GRMODE == VGAGR
+
+
+/*
+=====================
+=
+= RF_NewPosition VGA
+=
+=====================
+*/
+
+void RF_NewPosition (unsigned x, unsigned y)
+{
+	int mx,my;
+	byte	*page0ptr,*page1ptr;
+	unsigned 	updatenum;
+
+//
+// calculate new origin related globals
+//
+	RFL_CalcOriginStuff (x,y);
+
+//
+// clear out all animating tiles
+//
+	RFL_InitAnimList ();
+
+//
+// set up the new update arrays at base position
+//
+	memset (tilecache,0,sizeof(tilecache));		// old cache is invalid
+
+	updatestart[0] = baseupdatestart[0];
+	updatestart[1] = baseupdatestart[1];
+
+	page0ptr = updatestart[0]+PORTTILESWIDE;	// used to stick "0"s after rows
+	page1ptr = updatestart[1]+PORTTILESWIDE;
+
+	updatenum = 0;				// start at first visable tile
+
+	for (my=0;my<PORTTILESHIGH;my++)
+	{
+		for (mx=0;mx<PORTTILESWIDE;mx++)
+		{
+			RFL_NewTile(updatenum);			// puts "1"s in both pages
+			RFL_CheckForAnimTile(mx+originxtile,my+originytile);
+			updatenum++;
+		}
+		updatenum++;
+		*page0ptr = *page1ptr = 0; // set a 0 at end of a line of tiles
+		page0ptr+=(PORTTILESWIDE+1);
+		page1ptr+=(PORTTILESWIDE+1);
+	}
+	*(word *)(page0ptr-PORTTILESWIDE)
+		= *(word *)(page1ptr-PORTTILESWIDE) = UPDATETERMINATE;
+}
+
+//===========================================================================
+
+/*
+=================
+=
+= RFL_OldRow VGA
+=
+= Uncache the trailing row of tiles
+=
+=================
+*/
+
+void	RFL_OldRow (unsigned updatespot,unsigned count,unsigned step)
+{
+
+#if 0
+asm	mov	si,[updatespot]			// pointer inside each map plane
+asm	mov	cx,[count]				// number of tiles to clear
+asm	mov	dx,[step]				// move to next tile
+asm	mov	es,[WORD PTR mapsegs]			// background plane
+asm	mov	ds,[WORD PTR mapsegs+2]			// foreground plane
+
+clearcache:
+asm	mov	bx,[si]
+asm	or	bx,bx
+asm	jnz	blockok					// if a foreground tile, block wasn't cached
+asm	mov	bx,[es:si]
+asm	shl	bx,1
+asm	mov	[WORD PTR ss:tilecache+bx],0  //tile is no longer in master screen cache
+blockok:
+asm	add	si,dx
+asm	loop	clearcache
+
+asm	mov	ax,ss
+asm	mov	ds,ax
+#endif
+
+}
+
+
+/*
+=====================
+=
+= RF_Scroll  VGA
+=
+= Move the origin x/y global coordinates, readjust the screen panning, and
+= scroll if needed.  If the scroll distance is greater than one tile, the
+= entire screen will be redrawn (this could be generalized, but scrolling
+= more than one tile per refresh is a bad idea!).
+=
+=====================
+*/
+
+void RF_Scroll (int x, int y)
+{
+	long		neworgx,neworgy;
+	int			i,deltax,deltay,absdx,absdy;
+	int			oldxt,oldyt,move,yy;
+	unsigned	updatespot;
+	byte		*update0,*update1;
+	unsigned	oldpanx,oldpanadjust,oldoriginmap,oldscreen,newscreen,screencopy;
+	int			screenmove;
+
+	oldxt = originxtile;
+	oldyt = originytile;
+	oldoriginmap = originmap;
+	oldpanadjust = panadjust;
+	oldpanx = panx;
+
+	RFL_CalcOriginStuff ((long)originxglobal + x,(long)originyglobal + y);
+
+	deltax = originxtile - oldxt;
+	absdx = abs(deltax);
+	deltay = originytile - oldyt;
+	absdy = abs(deltay);
+
+	if (absdx>1 || absdy>1)
+	{
+	//
+	// scrolled more than one tile, so start from scratch
+	//
+		RF_NewPosition(originxglobal,originyglobal);
+		return;
+	}
+
+	if (!absdx && !absdy)
+		return;					// the screen has not scrolled an entire tile
+
+
+//
+// adjust screens and handle SVGA crippled compatability mode
+//
+	screenmove = deltay*16*SCREENWIDTH + deltax*TILEWIDTH;
+	for (i=0;i<3;i++)
+	{
+		screenstart[i]+= screenmove;
+		if (compatability && screenstart[i] > (0x10000l-SCREENSPACE) )
+		{
+			//
+			// move the screen to the opposite end of the buffer
+			//
+			screencopy = screenmove>0 ? FREEVGAMEM : -FREEVGAMEM;
+			oldscreen = screenstart[i] - screenmove;
+			newscreen = oldscreen + screencopy;
+			screenstart[i] = newscreen + screenmove;
+			VW_ScreenToScreen (oldscreen,newscreen,
+				PORTTILESWIDE*2,PORTTILESHIGH*16);
+
+			if (i==screenpage)
+				VW_SetScreen(newscreen+oldpanadjust,oldpanx & xpanmask);
+		}
+	}
+	bufferofs = screenstart[otherpage];
+	displayofs = screenstart[screenpage];
+	masterofs = screenstart[2];
+
+
+//
+// float the update regions
+//
+	move = deltax;
+	if (deltay==1)
+	  move += UPDATEWIDE;
+	else if (deltay==-1)
+	  move -= UPDATEWIDE;
+
+	updatestart[0]+=move;
+	updatestart[1]+=move;
+
+//
+// draw the new tiles just scrolled on to the master screen, and
+// mark them as needing to be copied to each screen next refreshes
+// Make sure a zero is at the end of each row in update
+//
+
+	if (deltax)
+	{
+		if (deltax==1)
+		{
+			RFL_NewRow (1);			// new right row
+			RFL_OldRow (oldoriginmap,PORTTILESHIGH,mapbyteswide);
+			RFL_RemoveAnimsOnX (originxtile-1);
+		}
+		else
+		{
+			RFL_NewRow (3);			// new left row
+			RFL_OldRow (oldoriginmap+(PORTTILESWIDE-1)*2,PORTTILESHIGH
+			,mapbyteswide);
+			RFL_RemoveAnimsOnX (originxtile+PORTTILESWIDE);
+		}
+
+		update0 = updatestart[0]+PORTTILESWIDE;
+		update1 = updatestart[1]+PORTTILESWIDE;
+		for	(yy=0;yy<PORTTILESHIGH;yy++)
+		{
+			*update0 = *update1 = 0;	// drop a 0 at end of each row
+			update0+=UPDATEWIDE;
+			update1+=UPDATEWIDE;
+		}
+	}
+
+//----------------
+
+	if (deltay)
+	{
+		if (deltay==1)
+		{
+			RFL_NewRow (2);			// new bottom row
+			RFL_OldRow (oldoriginmap,PORTTILESWIDE,2);
+			updatespot = UPDATEWIDE*(PORTTILESHIGH-1);
+			RFL_RemoveAnimsOnY (originytile-1);
+		}
+		else
+		{
+			RFL_NewRow (0);			// new top row
+			RFL_OldRow (oldoriginmap+mapbwidthtable[PORTTILESHIGH-1]
+			,PORTTILESWIDE,2);
+			updatespot = 0;
+			RFL_RemoveAnimsOnY (originytile+PORTTILESHIGH);
+		}
+
+		*(updatestart[0]+updatespot+PORTTILESWIDE) =
+			*(updatestart[1]+updatespot+PORTTILESWIDE) = 0;
+	}
+
+//----------------
+
+	//
+	// place a new terminator
+	//
+	update0 = updatestart[0]+UPDATEWIDE*PORTTILESHIGH-1;
+	update1 = updatestart[1]+UPDATEWIDE*PORTTILESHIGH-1;
+	*update0++ = *update1++ = 0;
+	*(unsigned *)update0 = *(unsigned *)update1 = UPDATETERMINATE;
+}
+
+//===========================================================================
+
+/*
+=====================
+=
+= RF_PlaceSprite   VGA
+=
+=====================
+*/
+
+void RF_PlaceSprite (void **user,unsigned globalx,unsigned globaly,
+	unsigned spritenumber, drawtype draw, int priority)
+{
+	spritelisttype	register *sprite,*next;
+	spritetabletype far *spr;
+	spritetype _seg	*block;
+	unsigned	shift,pixx;
+
+	if (!spritenumber)
+	{
+		RF_RemoveSprite (user);
+		return;
+	}
+
+	sprite = (spritelisttype *)*user;
+
+	if	(sprite)
+	{
+	// sprite allready exists in the list, so we can use it's block
+
+	//
+	// post an erase block to both pages by copying screenx,screeny,width,height
+	// both pages may not need to be erased if the sprite just changed last frame
+	//
+		if (sprite->updatecount<2)
+		{
+			if (!sprite->updatecount)
+				memcpy (eraselistptr[otherpage]++,sprite,sizeof(eraseblocktype));
+			memcpy (eraselistptr[screenpage]++,sprite,sizeof(eraseblocktype));
+		}
+
+		if (priority != sprite->priority)
+		{
+		// sprite mvoed to another priority, so unlink the old one and
+		// relink it in the new priority
+
+			next = sprite->nextsprite;			// cut old links
+			if (next)
+				next->prevptr = sprite->prevptr;
+			*sprite->prevptr = next;
+			goto linknewspot;
+		}
+	}
+	else
+	{
+	// this is a brand new sprite, so allocate a block from the array
+
+		if (!spritefreeptr)
+			Quit ("RF_PlaceSprite: No free spots in spritearray!");
+
+		sprite = spritefreeptr;
+		spritefreeptr = spritefreeptr->nextsprite;
+
+linknewspot:
+		next = prioritystart[priority];		// stick it in new spot
+		if (next)
+			next->prevptr = &sprite->nextsprite;
+		sprite->nextsprite = next;
+		prioritystart[priority] = sprite;
+		sprite->prevptr = &prioritystart[priority];
+	}
+
+//
+// write the new info to the sprite
+//
+	spr = &spritetable[spritenumber-STARTSPRITES];
+	block = (spritetype _seg *)grsegs[spritenumber];
+
+	globaly+=spr->orgy;
+	globalx+=spr->orgx;
+
+	pixx = globalx >> G_SY_SHIFT;
+	shift = (pixx&7)/2;
+
+	sprite->screenx = pixx >> (G_VGASX_SHIFT-G_SY_SHIFT);
+	sprite->screeny = globaly >> G_SY_SHIFT;
+	sprite->width = block->width[shift];
+	sprite->height = spr->height;
+	sprite->grseg = spritenumber;
+	sprite->sourceofs = block->sourceoffset[shift];
+	sprite->planesize = block->planesize[shift];
+	sprite->draw = draw;
+	sprite->priority = priority;
+	sprite->tilex = sprite->screenx >> SX_T_SHIFT;
+	sprite->tiley = sprite->screeny >> SY_T_SHIFT;
+	sprite->tilewide = ( (sprite->screenx + sprite->width -1) >> SX_T_SHIFT )
+		- sprite->tilex + 1;
+	sprite->tilehigh = ( (sprite->screeny + sprite->height -1) >> SY_T_SHIFT )
+		- sprite->tiley + 1;
+
+	sprite->updatecount = 2;		// draw on next two refreshes
+
+// save the sprite pointer off in the user's pointer so it can be moved
+// again later
+
+	*user = sprite;
+}
+
+//===========================================================================
+
+/*
+=====================
+=
+= RF_RemoveSprite  VGA
+=
+=====================
+*/
+
+void RF_RemoveSprite (void **user)
+{
+	spritelisttype	*sprite,*next;
+
+	sprite = (spritelisttype *)*user;
+	if (!sprite)
+		return;
+
+//
+// post an erase block to both pages by copying screenx,screeny,width,height
+// both pages may not need to be erased if the sprite just changed last frame
+//
+	if (sprite->updatecount<2)
+	{
+		if (!sprite->updatecount)
+			memcpy (eraselistptr[otherpage]++,sprite,sizeof(eraseblocktype));
+		memcpy (eraselistptr[screenpage]++,sprite,sizeof(eraseblocktype));
+	}
+
+//
+// unlink the sprite node
+//
+	next = sprite->nextsprite;
+	if (next)						// if (!next), sprite is last in chain
+		next->prevptr = sprite->prevptr;
+	*sprite->prevptr = next;
+
+//
+// add it back to the free list
+//
+	sprite->nextsprite = spritefreeptr;
+	spritefreeptr = sprite;
+
+//
+// null the users pointer, so next time that actor gets placed, it will
+// allocate a new block
+//
+
+	*user = 0;
+}
+
+
+//===========================================================================
+
+
+/*
+====================
+=
+= RFL_EraseBlocks  VGA
+=
+= Write mode 1 should be set
+=
+====================
+*/
+
+void RFL_EraseBlocks (void)
+{
+	eraseblocktype	*block,*done;
+	int			screenxh,screenyh;
+	unsigned	pos,xtl,ytl,xth,yth,x,y;
+	byte		*updatespot;
+	unsigned	updatedelta;
+	unsigned	erasecount;
+
+#ifdef PROFILE
+	erasecount = 0;
+#endif
+
+	block = otherpage ? &eraselist[1][0] : &eraselist[0][0];
+
+	done = eraselistptr[otherpage];
+
+	while (block != done)
+	{
+
+	//
+	// clip the block to the current screen view
+	//
+		block->screenx -= originxscreen;
+		block->screeny -= originyscreen;
+
+		if (block->screenx < 0)
+		{
+			block->width += block->screenx;
+			if (block->width<1)
+				goto next;
+			block->screenx = 0;
+		}
+
+		if (block->screeny < 0)
+		{
+			block->height += block->screeny;
+			if (block->height<1)
+				goto next;
+			block->screeny = 0;
+		}
+
+		screenxh = block->screenx + block->width;
+		screenyh = block->screeny + block->height;
+
+		if (screenxh > VGAPORTSCREENWIDE)
+		{
+			block->width = VGAPORTSCREENWIDE-block->screenx;
+			screenxh = block->screenx + block->width;
+		}
+
+		if (screenyh > PORTSCREENHIGH)
+		{
+			block->height = PORTSCREENHIGH-block->screeny;
+			screenyh = block->screeny + block->height;
+		}
+
+		if (block->width<1 || block->height<1)
+			goto next;
+
+	//
+	// erase the block by copying from the master screen
+	//
+		pos = ylookup[block->screeny]+block->screenx;
+		VW_ScreenToScreen (masterofs+pos,bufferofs+pos,
+			block->width,block->height);
+
+	//
+	// put 2s in update where the block was, to force sprites to update
+	//
+		xtl = block->screenx >> SX_T_SHIFT;
+		xth = (block->screenx+block->width-1) >> SX_T_SHIFT;
+		ytl = block->screeny >> SY_T_SHIFT;
+		yth = (block->screeny+block->height-1) >> SY_T_SHIFT;
+
+		updatespot = updateptr + uwidthtable[ytl] + xtl;
+		updatedelta = UPDATEWIDE - (xth-xtl+1);
+
+		for (y=ytl;y<=yth;y++)
+		{
+			for (x=xtl;x<=xth;x++)
+				*updatespot++ = 2;
+			updatespot += updatedelta;		// down to next line
+		}
+#ifdef PROFILE
+		erasecount++;
+#endif
+
+next:
+		block++;
+	}
+	eraselistptr[otherpage] = otherpage ? &eraselist[1][0] : &eraselist[0][0];
+#ifdef PROFILE
+	strcpy (scratch,"\tErase:");
+	itoa (erasecount,str,10);
+	strcat (scratch,str);
+	write (profilehandle,scratch,strlen(scratch));
+#endif
+
+}
+
+
+/*
+====================
+=
+= RFL_UpdateSprites VGA
+=
+= NOTE: Implement vertical clipping!
+=
+====================
+*/
+
+void RFL_UpdateSprites (void)
+{
+	spritelisttype	*sprite;
+	int	portx,porty,x,y,xtl,xth,ytl,yth;
+	int	priority;
+	unsigned dest;
+	byte		*updatespot,*baseupdatespot;
+	unsigned	updatedelta;
+	unsigned	updatecount;
+	unsigned	height,sourceofs;
+
+#ifdef PROFILE
+	updatecount = 0;
+#endif
+
+	for (priority=0;priority<PRIORITIES;priority++)
+	{
+		if (priority==MASKEDTILEPRIORITY)
+			RFL_MaskForegroundTiles ();
+
+		for (sprite = prioritystart[priority]; sprite ;
+			sprite = (spritelisttype *)sprite->nextsprite)
+		{
+		//
+		// see if the sprite has any visable area in the port
+		//
+
+			portx = sprite->screenx - originxscreen;
+			porty = sprite->screeny - originyscreen;
+			xtl = portx >> SX_T_SHIFT;
+			xth = (portx + sprite->width-1) >> SX_T_SHIFT;
+			ytl = porty >> SY_T_SHIFT;
+			yth = (porty + sprite->height-1) >> SY_T_SHIFT;
+
+			if (xtl<0)
+			  xtl = 0;
+			if (xth>=PORTTILESWIDE)
+			  xth = PORTTILESWIDE-1;
+			if (ytl<0)
+			  ytl = 0;
+			if (yth>=PORTTILESHIGH)
+			  yth = PORTTILESHIGH-1;
+
+			if (xtl>xth || ytl>yth)
+				continue;
+
+		//
+		// see if it's visable area covers any non 0 update tiles
+		//
+			updatespot = baseupdatespot = updateptr + uwidthtable[ytl] + xtl;
+			updatedelta = UPDATEWIDE - (xth-xtl+1);
+
+			if (sprite->updatecount)
+			{
+				sprite->updatecount--;			// the sprite was just placed,
+				goto redraw;					// so draw it for sure
+			}
+
+			for (y=ytl;y<=yth;y++)
+			{
+				for (x=xtl;x<=xth;x++)
+					if (*updatespot++)
+						goto redraw;
+				updatespot += updatedelta;		// down to next line
+			}
+			continue;							// no need to update
+
+redraw:
+		//
+		// set the tiles it covers to 3, because those tiles are being
+		// updated
+		//
+			updatespot = baseupdatespot;
+			for (y=ytl;y<=yth;y++)
+			{
+				for (x=xtl;x<=xth;x++)
+					*updatespot++ = 3;
+				updatespot += updatedelta;		// down to next line
+			}
+		//
+		// draw it!
+		//
+			height = sprite->height;
+			sourceofs = sprite->sourceofs;
+			if (porty<0)
+			{
+				height += porty;					// clip top off
+				sourceofs -= porty*sprite->width;
+				porty = 0;
+			}
+			else if (porty+height>PORTSCREENHIGH)
+			{
+				height = PORTSCREENHIGH - porty;    // clip bottom off
+			}
+
+			dest = bufferofs + ylookup[porty] + portx;
+
+			switch (sprite->draw)
+			{
+			case spritedraw:
+				VW_MaskBlock(grsegs[sprite->grseg], sourceofs,
+					dest,sprite->width,height,sprite->planesize);
+				break;
+
+			case maskdraw:
+				break;
+
+			}
+#ifdef PROFILE
+			updatecount++;
+#endif
+
+
+		}
+	}
+#ifdef PROFILE
+	strcpy (scratch,"\tSprites:");
+	itoa (updatecount,str,10);
+	strcat (scratch,str);
+	write (profilehandle,scratch,strlen(scratch));
+#endif
+
+}
+
+
+/*
+=====================
+=
+= RF_Refresh   VGA
+=
+= All routines will draw at the port at bufferofs, possibly copying from
+= the port at masterofs.  The VGA version then page flips, while the
+= CGA version updates the screen from the buffer port.
+=
+= Screenpage is the currently displayed page, not the one being drawn
+= Otherpage is the page to be worked with now
+=
+=====================
+*/
+
+void RF_Refresh (void)
+{
+	byte	*newupdate;
+	long	newtime;
+
+	updateptr = updatestart[otherpage];
+
+	RFL_AnimateTiles ();		// DEBUG
+
+//
+// update newly scrolled on tiles and animated tiles from the master screen
+//
+	VGAWRITEMODE(1);
+	VGAMAPMASK(15);
+	RFL_UpdateTiles ();
+	RFL_EraseBlocks ();
+
+//
+// Update is all 0 except where sprites have changed or new area has
+// been scrolled on.  Go through all sprites and update the ones that cover
+// a non 0 update tile
+//
+	VGAWRITEMODE(0);
+	RFL_UpdateSprites ();
+
+//
+// if the main program has a refresh hook set, call their function before
+// displaying the new page
+//
+	if (refreshvector)
+		refreshvector();
+
+//
+// display the changed screen
+//
+	VW_SetScreen(bufferofs+panadjust,panx & xpanmask);
+
+//
+// prepare for next refresh
+//
+// Set the update array to the middle position and clear it out to all "0"s
+// with an UPDATETERMINATE at the end
+//
+	updatestart[otherpage] = newupdate = baseupdatestart[otherpage];
+#if 0
+asm	mov	ax,ds
+asm	mov	es,ax
+asm	xor	ax,ax
+asm	mov	cx,(UPDATESCREENSIZE-2)/2
+asm	mov	di,[newupdate]
+asm	rep	stosw
+asm	mov	[WORD PTR es:di],UPDATETERMINATE
+#endif
+
+	screenpage ^= 1;
+	otherpage ^= 1;
+	bufferofs = screenstart[otherpage];
+	displayofs = screenstart[screenpage];
+
+//
+// calculate tics since last refresh for adaptive timing
+//
+	if (lasttimecount > TimeCount)
+		lasttimecount = TimeCount;		// if the game was paused a LONG time
+	do
+	{
+		newtime = TimeCount;
+		tics = newtime-lasttimecount;
+	} while (tics<MINTICS);
+	lasttimecount = newtime;
+
+#ifdef PROFILE
+	strcpy (scratch,"\tTics:");
+	itoa (tics,str,10);
+	strcat (scratch,str);
+	strcat (scratch,"\n");
+	write (profilehandle,scratch,strlen(scratch));
+#endif
+
+	if (tics>MAXTICS)
+	{
+		TimeCount -= (tics-MAXTICS);
+		tics = MAXTICS;
+	}
+}
+
+#endif		// GRMODE == VGAGR

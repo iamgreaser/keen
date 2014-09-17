@@ -18,7 +18,7 @@
 
 // KD_KEEN.C
 
-#include "KD_DEF.H"
+#include "kd_def.h"
 #pragma hdrstop
 
 /*
@@ -174,6 +174,33 @@ void	FixScoreBox (void)
 ======================
 */
 
+// WHAT THE HELL IS THIS DOING HERE I MEAN REALLY
+#if GRMODE == VGAGR
+
+void MemDrawChar (int char8,byte far *dest,unsigned width,unsigned planesize)
+{
+	// XXX: CONFIRM THAT THIS ACTUALLY WORKS
+	int x, y;
+	int src_index = char8<<5; // index into char 8 segment
+
+	byte *si = grsegs[STARTTILE8*2] + src_index;
+	byte *di = dest;
+
+	for(y = 0; y < 8; y++)
+	{
+		int c = si[x];
+		for(x = 0; x < 8; x++)
+			// TODO: Check if we have the right colour!
+			di[x] = (((c>>x)&1) != 0 ? 15 : 0);
+
+		si += 8;
+		di += width;
+	}
+
+	(void)planesize; // shut the compiler up
+}
+#endif
+
 #if GRMODE == EGAGR
 
 void MemDrawChar (int char8,byte far *dest,unsigned width,unsigned planesize)
@@ -318,7 +345,9 @@ void ScoreThink (objtype *ob)
 		dest = (byte far *)grsegs[SCOREBOXSPR]+block->sourceoffset[0]
 			+ planesize + width*4 + 1*CHARWIDTH;
 
-		ltoa (gamestate.score,str,10);
+		//ltoa (gamestate.score,str,10);
+		str[9] = '\x00';
+		snprintf(str, 9, "%i", gamestate.score);
 
 		// erase leading spaces
 		length = strlen(str);
@@ -355,8 +384,11 @@ void ScoreThink (objtype *ob)
 
 		if (number > 99)
 			strcpy (str,"99");
-		else
-			ltoa (number,str,10);
+		else {
+			//ltoa (number,str,10);
+			str[9] = '\x00';
+			snprintf(str, 9, "%i", number);
+		}
 
 		// erase leading spaces
 		length = strlen(str);

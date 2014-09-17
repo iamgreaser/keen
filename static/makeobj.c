@@ -36,17 +36,15 @@
 */
 
 #include <stdio.h>
-#include <malloc.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 
-#pragma pack(1)
 typedef struct
 {
 	unsigned char type;
 	unsigned short len;
-} SegHeader;
+} __attribute__((__packed__)) SegHeader;
 
 typedef struct
 {
@@ -54,8 +52,7 @@ typedef struct
 	unsigned char name;
 	unsigned char classname;
 	unsigned char overlayname;
-} SegDef;
-#pragma pack()
+} __attribute__((__packed__)) SegDef;
 
 const char* ReadFile(const char* fn, int *size)
 {

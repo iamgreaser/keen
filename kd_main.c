@@ -27,10 +27,10 @@
 =============================================================================
 */
 
-#include "mem.h"
-#include "string.h"
+//include "mem.h"
+#include <string.h>
 
-#include "KD_DEF.H"
+#include "kd_def.h"
 #pragma hdrstop
 
 /*
@@ -66,10 +66,26 @@ void	TestSprites(void);
 int		DebugKeys (void);
 void	ShutdownId (void);
 void	Quit (char *error);
-void	InitGame (void);
-void	main (void);
+void	InitGame (int argc, char *argv[]);
+int	main (int argc, char *argv[]);
 
 //===========================================================================
+
+// some extra DOS crap which you MIGHT want to convert to ANSI
+void textcolor(int v)
+{
+	// STUB.
+}
+
+void textbackground(int v)
+{
+	// STUB.
+}
+
+void clrscr(void)
+{
+	// STUB.
+}
 
 #if FRILLS
 
@@ -398,7 +414,7 @@ void Quit (char *error)
 #include "piracy.h"
 #endif
 
-void InitGame (void)
+void InitGame (int argc, char *argv[])
 {
 	int i;
 
@@ -432,12 +448,12 @@ void InitGame (void)
 	}
 #endif
 
-	US_TextScreen();
+	US_TextScreen(argc, argv);
 
-	VW_Startup ();
-	RF_Startup ();
-	IN_Startup ();
-	SD_Startup ();
+	VW_Startup (argc, argv);
+	RF_Startup (argc, argv);
+	IN_Startup (argc, argv);
+	SD_Startup (argc, argv);
 	US_Startup ();
 
 //	US_UpdateTextScreen();
@@ -489,11 +505,11 @@ void InitGame (void)
 ==========================
 */
 
-void main (void)
+int main (int argc, char *argv[])
 {
 	short i;
 
-	if (stricmp(_argv[1], "/VER") == 0)
+	if (argc > 1 && stricmp(argv[1], "/VER") == 0)
 	{
 		printf("\nKeen Dreams version 1.93 (Rev 1)\n");
 		printf("developed for use with 100%% IBM compatibles\n");
@@ -504,7 +520,7 @@ void main (void)
 		exit(0);
 	}
 
-	if (stricmp(_argv[1], "/?") == 0)
+	if (argc > 1 && stricmp(argv[1], "/?") == 0)
 	{
 		printf("\nKeen Dreams version 1.93\n");
 		printf("Copyright 1991-1993 Softdisk Publishing.\n\n");
@@ -524,9 +540,11 @@ void main (void)
 	textcolor(7);
 	textbackground(0);
 
-	InitGame();
+	InitGame(argc, argv);
 
 	DemoLoop();					// DemoLoop calls Quit when everything is done
 	Quit("Demo loop exited???");
+
+	return 0;
 }
 
