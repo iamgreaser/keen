@@ -1203,7 +1203,7 @@ int VW_MarkUpdateBlock (int x1, int y1, int x2, int y2)
 	{
 		for (x=xt1;x<=xt2;x++)
 			//*mark++ = 1;			// this tile will need to be updated
-			; // TODO: make this behave
+			mark++; // TODO: make this behave
 
 		mark += nextline;
 	}
@@ -1314,6 +1314,7 @@ void VWB_DrawPic (int x, int y, int chunknum)
 	dest = ylookup[y]+x+bufferofs;
 	width = pictable[picnum].width;
 	height = pictable[picnum].height;
+	printf("\n%p %i %i %i\n", source, chunknum, width, height);
 
 	if (VW_MarkUpdateBlock (x*SCREENXDIV,y,(x+width)*SCREENXDIV-1,y+height-1))
 		VW_MemToScreen(source,dest,width,height);

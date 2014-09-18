@@ -76,13 +76,13 @@ typedef struct
 =============================================================================
 */
 
-byte 		_seg	*tinf;
-int			mapon;
+byte 		*tinf;
+int16_t		mapon;
 
-unsigned	_seg	*mapsegs[3];
-maptype		_seg	*mapheaderseg[NUMMAPS];
-byte		_seg	*audiosegs[NUMSNDCHUNKS];
-void		_seg	*grsegs[NUMCHUNKS];
+uint16_t	*mapsegs[3];
+maptype		*mapheaderseg[NUMMAPS];
+byte		*audiosegs[NUMSNDCHUNKS];
+void		*grsegs[NUMCHUNKS];
 
 byte		grneeded[NUMCHUNKS];
 byte		ca_levelbit,ca_levelnum;

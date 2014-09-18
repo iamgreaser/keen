@@ -67,7 +67,7 @@ char WritePtr(long outfile, unsigned char data, unsigned PtrType)
 
 		case DEST_MEM:
 			//*((char far *)*(char far **)outfile)++ = data;
-			*(*(char **)outfile)++ = data;
+			*((*(char **)outfile)++) = data;
 		break;
 	}
 
@@ -86,7 +86,7 @@ char WritePtr(long outfile, unsigned char data, unsigned PtrType)
 //
 //
 //---------------------------------------------------------------------------
-int ReadPtr(long infile, unsigned PtrType)
+int ReadPtr(intptr_t infile, unsigned PtrType)
 {
 	int returnval = 0;
 
@@ -101,7 +101,7 @@ int ReadPtr(long infile, unsigned PtrType)
 		break;
 
 		case SRC_BFILE:
-			returnval = bio_readch((BufferedIO *)*(void **)infile);
+			returnval = bio_readch(*(BufferedIO **)(void *)infile);
 		break;
 
 //		case SRC_IMEM:

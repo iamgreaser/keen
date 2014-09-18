@@ -270,6 +270,7 @@ void MM_Startup (void)
 	mmstarted = true;
 	bombonerror = true;
 
+#if 0
 //
 // set up the linked list (everything in the free list;
 //
@@ -365,11 +366,12 @@ void MM_Startup (void)
 	mmnew->attributes = LOCKBIT;
 	mmnew->next = NULL;
 	mmrover->next = mmnew;
+#endif
 
 //
 // allocate the misc buffer
 //
-	mmrover = mmhead;		// start looking for space after low block
+	//mmrover = mmhead;		// start looking for space after low block
 
 	MM_GetPtr (&bufferseg,BUFFERSIZE);
 }
@@ -391,9 +393,11 @@ void MM_Shutdown (void)
   if (!mmstarted)
 	return;
 
+#if 0
   //farfree (farheap);
   free (farheap);
   free (nearheap);
+#endif
   MML_ShutdownEMS ();
   MML_ShutdownXMS ();
 }
@@ -555,6 +559,7 @@ void MM_FreePtr (memptr *baseptr)
 
 void MM_SetPurge (memptr *baseptr, int purge)
 {
+/*
 	mmblocktype far *start;
 
 	start = mmrover;
@@ -575,6 +580,7 @@ void MM_SetPurge (memptr *baseptr, int purge)
 
 	mmrover->attributes &= ~PURGEBITS;
 	mmrover->attributes |= purge;
+*/
 }
 
 //==========================================================================
@@ -629,6 +635,7 @@ void MM_SetLock (memptr *baseptr, boolean locked)
 
 void MM_SortMem (void)
 {
+#if 0
 	mmblocktype far *scan,far *last,far *next;
 	unsigned	start,length;
 	void *source, *dest;
@@ -700,6 +707,7 @@ void MM_SortMem (void)
 		aftersort();
 
 	VW_ColorBorder (0);
+#endif
 }
 
 
@@ -715,6 +723,7 @@ void MM_SortMem (void)
 
 void MM_ShowMemory (void)
 {
+#if 0
 	mmblocktype far *scan;
 	unsigned color,temp;
 	long	end;
@@ -749,6 +758,7 @@ void MM_ShowMemory (void)
 	IN_Ack();
 	VW_SetLineWidth(64);
 	bufferofs = temp;
+#endif
 }
 
 //==========================================================================
@@ -766,6 +776,8 @@ void MM_ShowMemory (void)
 
 long MM_UnusedMemory (void)
 {
+	return (long)(12<<20);
+#if 0
 	unsigned free;
 	mmblocktype far *scan;
 
@@ -779,6 +791,7 @@ long MM_UnusedMemory (void)
 	}
 
 	return free*16l;
+#endif
 }
 
 //==========================================================================
@@ -796,6 +809,8 @@ long MM_UnusedMemory (void)
 
 long MM_TotalFree (void)
 {
+	return (long)(12<<20);
+#if 0
 	unsigned free;
 	mmblocktype far *scan;
 
@@ -811,5 +826,6 @@ long MM_TotalFree (void)
 	}
 
 	return free*16l;
+#endif
 }
 

@@ -472,9 +472,9 @@ US_CheckParm(char *parm,char **strings)
 static void
 USL_ScreenDraw(word x,word y,char *s,byte attr)
 {
-	byte	far *screen;
+	//byte	far *screen;
 
-	screen = MK_FP(0xb800,(x * 2) + (y * 80 * 2));
+	//screen = MK_FP(0xb800,(x * 2) + (y * 80 * 2));
 	while (*s)
 	{
 		putchar(*s++);
@@ -555,15 +555,16 @@ US_TextScreen(int argc, char *argv[])
 static void
 USL_Show(word x,word y,word w,boolean show,boolean hilight)
 {
-	byte	far *screen;
+	//byte	far *screen;
 
-	screen = MK_FP(0xb800,((x - 1) * 2) + (y * 80 * 2));
-	*screen++ = show? 251 : ' ';	// Checkmark char or space
-	*screen = 0x48;
-	if (show && hilight)
+	//screen = MK_FP(0xb800,((x - 1) * 2) + (y * 80 * 2));
+	//*screen++ = show? 251 : ' ';	// Checkmark char or space
+	//*screen = 0x48;
+	putchar(show ? 'Y' : ' '); // Checkmark char or space
+	//if (show && hilight)
 	{
-		for (w++;w--;screen += 2)
-			*screen = 0x4f;
+		//for (w++;w--;screen += 2)
+		//	*screen = 0x4f;
 	}
 }
 

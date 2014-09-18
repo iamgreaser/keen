@@ -474,12 +474,12 @@ DemoLoop (void)
 
 		FileName1 = "TITLESCR.LBM";
 		// TODO: actually make these decompress properly
-		//if (LoadLIBShape("KDREAMS.CMP", FileName1, &FileShape1))
-		//	Quit("Can't load TITLE SCREEN");
+		if (LoadLIBShape("KDREAMS.CMP", FileName1, &FileShape1))
+			Quit("Can't load TITLE SCREEN");
 #if CREDITS
 		FileName2 = "CREDITS.LBM";
-		//if (LoadLIBShape("KDREAMS.CMP", FileName2, &FileShape2))
-		//	Quit("Can't load CREDITS SCREEN");
+		if (LoadLIBShape("KDREAMS.CMP", FileName2, &FileShape2))
+			Quit("Can't load CREDITS SCREEN");
 #endif
 
 		while (!restartgame && !loadedgame)

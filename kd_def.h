@@ -155,7 +155,7 @@ struct Shape {
 typedef struct {
 	int handle;			// handle of file
 	memptr buffer;		// pointer to buffer
-	word offset;		// offset into buffer
+	int offset;		// offset into buffer
 	word status;		// read/write status
 } BufferedIO;
 

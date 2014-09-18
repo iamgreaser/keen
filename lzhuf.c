@@ -795,7 +795,7 @@ static int GetByte(long infile_ptr, unsigned long *CompressLength, unsigned PtrT
 //---------------------------------------------------------------------------
 static int GetBit(long infile_ptr, unsigned long *CompressLength, unsigned PtrTypes)	/* get one bit */
 {
-	int i;
+	int16_t i;
 
 	while (getlen <= 8)
 	{
@@ -814,7 +814,7 @@ static int GetBit(long infile_ptr, unsigned long *CompressLength, unsigned PtrTy
 	i = getbuf;
 	getbuf <<= 1;
 	getlen--;
-	return (i < 0);
+	return (i < 0 ? 1 : 0);
 }
 
 
@@ -826,7 +826,7 @@ static int GetBit(long infile_ptr, unsigned long *CompressLength, unsigned PtrTy
 //---------------------------------------------------------------------------
 static int DecodeChar(long infile_ptr, unsigned long *CompressLength, unsigned PtrTypes)
 {
-	unsigned c;
+	uint16_t c;
 
 	c = son[R];
 
@@ -903,8 +903,8 @@ static int DecodePosition(long infile_ptr,unsigned long *CompressLength, unsigne
 //---------------------------------------------------------------------------
 long lzhDecompress(void *infile, void *outfile, unsigned long OrginalLength, unsigned long CompressLength, unsigned PtrTypes)
 {
-	int  i, j, k, r, c;
-	long count;
+	int16_t  i, j, k, r, c;
+	int32_t count;
 
 	datasize = textsize = OrginalLength;
 	getbuf = 0;

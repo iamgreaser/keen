@@ -45,7 +45,8 @@ int UnpackEGAShapeToScreen(struct Shape *SHP,int startx,int starty)
 
 	NotWordAligned = SHP->BPR & 1;
 	startx>>=3;
-	Src = MK_FP(SHP->Data,0);
+	//Src = MK_FP(SHP->Data,0);
+	Src = SHP->Data;
 	currenty = starty;
 	Plane = 0;
 	Height = SHP->bmHdr.h;
@@ -152,7 +153,7 @@ void FreeBufferedIO(BufferedIO *bio)
 //--------------------------------------------------------------------------
 byte bio_readch(BufferedIO *bio)
 {
-	byte far *buffer;
+	byte *buffer;
 
 	if (bio->offset == BIO_BUFFER_LEN)
 	{
@@ -160,7 +161,7 @@ byte bio_readch(BufferedIO *bio)
 		bio_fillbuffer(bio);
 	}
 
-	buffer = MK_FP(bio->buffer,bio->offset++);
+	buffer = bio->buffer + (bio->offset++);
 
 	return(*buffer);
 }
