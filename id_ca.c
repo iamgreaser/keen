@@ -176,7 +176,6 @@ void CAL_GetGrChunkLength (int chunk)
 	lseek(grhandle,grstarts[chunk],SEEK_SET);
 	read(grhandle,&chunkexplen,sizeof(chunkexplen));
 	chunkcomplen = grstarts[chunk+1]-grstarts[chunk]-4;
-	printf("\n%08X %08X\n", chunkcomplen, chunkexplen);
 }
 
 
@@ -192,31 +191,18 @@ void CAL_GetGrChunkLength (int chunk)
 
 boolean CA_FarRead (int handle, byte far *dest, long length)
 {
-	if (length>0xffffl)
+	int rlen = read(handle, dest, length);
+
+	if(rlen < 0)
+		return false;
+
+	if(rlen != length)
 	{
-		Quit ("CA_FarRead doesn't support 64K reads yet!");
+		errno = EINVFMT; // user manager knows this is bad read
+		return false;
 	}
 
-#if 0
-asm		push	ds
-asm		mov	bx,[handle]
-asm		mov	cx,[WORD PTR length]
-asm		mov	dx,[WORD PTR dest]
-asm		mov	ds,[WORD PTR dest+2]
-asm		mov	ah,0x3f				// READ w/handle
-asm		int	21h
-asm		pop	ds
-asm		jnc	good
-	errno = _AX;
-	return	false;
-good:
-asm		cmp	ax,[WORD PTR length]
-asm		je	done
-	errno = EINVFMT;			// user manager knows this is bad read
-	return	false;
-done:
-#endif
-	return	true;
+	return true;
 }
 
 
@@ -388,7 +374,6 @@ void CAL_HuffExpand (byte *source, byte *dest,
 		{
 			// write a decopmpressed byte out
 			*(esdi++) = (uint8_t)dx;
-			if(dx != 0) printf("byte %02X\n", dx);
 			i++;
 
 			// back to the head node for next bit
@@ -856,7 +841,7 @@ void CA_Shutdown (void)
 
 void CA_CacheAudioChunk (int chunk)
 {
-	long	pos,compressed,expanded;
+	int32_t	pos,compressed,expanded;
 	memptr	bigbufferseg;
 	byte	far *source;
 
@@ -894,7 +879,7 @@ void CA_CacheAudioChunk (int chunk)
 		source = bigbufferseg;
 	}
 
-	expanded = *(long far *)source;
+	expanded = *(int32_t *)source;
 	source += 4;			// skip over length
 	MM_GetPtr ((memptr)&audiosegs[chunk],expanded);
 	CAL_HuffExpand (source,audiosegs[chunk],expanded,audiohuffman);

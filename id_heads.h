@@ -41,6 +41,7 @@
 #define huge
 #define O_BINARY 0
 #define interrupt
+#define EINVFMT 120
 
 // a few more DOSisms
 #define MK_FP(seg,ofs) ((void *)((((long)(seg))<<4)+(ofs)))

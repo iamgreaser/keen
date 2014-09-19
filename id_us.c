@@ -1529,8 +1529,8 @@ USL_HandleError(int num)
 		strcat(buf,"Unknown");
 	else if (num == ENOMEM)
 		strcat(buf,"Disk is Full");
-	//else if (num == EINVFMT)
-	//	strcat(buf,"File is Incomplete");
+	else if (num == EINVFMT)
+		strcat(buf,"File is Incomplete");
 	else
 		strcat(buf,sys_errlist[num]);
 
