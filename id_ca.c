@@ -55,17 +55,16 @@ loaded into the data segment
 
 typedef struct
 {
-  unsigned bit0,bit1;	// 0-255 is a character, > is a pointer to a node
-} huffnode;
-
+  uint16_t bit0,bit1;	// 0-255 is a character, > is a pointer to a node
+} __attribute__((__packed__)) huffnode;
 
 typedef struct
 {
-	unsigned	RLEWtag;
-	long		headeroffsets[100];
+	uint16_t	RLEWtag;
+	int32_t		headeroffsets[100];
 	byte		headersize[100];		// headers are very small
 	byte		tileinfo[];
-} mapfiletype;
+} __attribute__((__packed__)) mapfiletype;
 
 
 /*
@@ -99,9 +98,9 @@ int			profilehandle;
 =============================================================================
 */
 
-extern	long	far	CGAhead;
-//extern	long	far	EGAhead;
-extern	byte	CGAdict;
+//extern	long	CGAhead;
+//extern	long	EGAhead;
+//extern	byte	CGAdict;
 //extern	byte	EGAdict;
 extern	byte	far	maphead;
 //extern	byte	mapdict;
@@ -109,9 +108,9 @@ extern	byte	far	maphead;
 //extern	byte	audiodict;
 
 
-int16_t		*grstarts;	// array of offsets in egagraph, -1 for sparse
+int32_t		*grstarts;	// array of offsets in egagraph, -1 for sparse
 //long		_seg *grstarts;	// array of offsets in egagraph, -1 for sparse
-int16_t		*audiostarts;	// array of offsets in audio / audiot
+int32_t		*audiostarts;	// array of offsets in audio / audiot
 //long		_seg *audiostarts;	// array of offsets in audio / audiot
 
 #ifdef GRHEADERLINKED
@@ -137,7 +136,7 @@ int			grhandle;		// handle to EGAGRAPH
 int			maphandle;		// handle to MAPTEMP / GAMEMAPS
 int			audiohandle;	// handle to AUDIOT / AUDIO
 
-long		chunkcomplen,chunkexplen;
+int32_t		chunkcomplen,chunkexplen;
 
 SDMode		oldsoundmode;
 
@@ -177,6 +176,7 @@ void CAL_GetGrChunkLength (int chunk)
 	lseek(grhandle,grstarts[chunk],SEEK_SET);
 	read(grhandle,&chunkexplen,sizeof(chunkexplen));
 	chunkcomplen = grstarts[chunk+1]-grstarts[chunk]-4;
+	printf("\n%08X %08X\n", chunkcomplen, chunkexplen);
 }
 
 
@@ -306,27 +306,17 @@ boolean CA_LoadFile (char *filename, memptr *ptr)
 = Goes through a huffman table and changes the 256-511 node numbers to the
 = actular address of the node.  Must be called before CAL_HuffExpand
 =
+= (does nothing in this port!)
+=
 ===============
 */
 
 void CAL_OptimizeNodes (huffnode *table)
 {
-  huffnode *node;
-  int i;
-
-  node = table;
-
-  for (i=0;i<255;i++)
-  {
-	if (node->bit0 >= 256)
-	  node->bit0 = (unsigned)(table+(node->bit0-256));
-	if (node->bit1 >= 256)
-	  node->bit1 = (unsigned)(table+(node->bit1-256));
-	node++;
-  }
+	// Due to the way huffman stuff is decompressed NOW
+	// (seeing as the asm code needed to be ported to non-16-bit C),
+	// this function does absolutely nothing.
 }
-
-
 
 /*
 ======================
@@ -338,154 +328,76 @@ void CAL_OptimizeNodes (huffnode *table)
 ======================
 */
 
-void CAL_HuffExpand (byte huge *source, byte huge *dest,
+void CAL_HuffExpand (byte *source, byte *dest,
   long length,huffnode *hufftable)
 {
-  unsigned bit,byte,node,code;
-  unsigned sourceseg,sourceoff,destseg,destoff,endoff;
-  huffnode *nodeon,*headptr;
+	uint16_t bit,byte,node,code;
+	int i;
+	huffnode *nodeon,*headptr;
 
-  headptr = hufftable+254;	// head node is allways node 254
+	int headidx = 254; // head node is allways node 254
 
-  source++;	// normalize
-  source--;
-  dest++;
-  dest--;
+	// XXX: can someone please explain this one? --GM
+	/*
+	source++;	// normalize
+	source--;
+	dest++;
+	dest--;
+	*/
 
-  sourceseg = FP_SEG(source);
-  sourceoff = FP_OFF(source);
-  destseg = FP_SEG(dest);
-  destoff = FP_OFF(dest);
-  endoff = destoff+length;
+	//--------------------------
+	// expand data
+	//--------------------------
 
-//
-// ds:si source
-// es:di dest
-// ss:bx node pointer
-//
+	uint16_t dx;
+	uint8_t ch, cl;
+	uint8_t *dssi, *esdi;
 
-#if 0
-	if (length <0xfff0)
+	dssi = source;
+	esdi = dest;
+
+	// load first byte
+	ch = *(dssi++);
+	cl = 1;
+
+	for(i = 0; i < length;)
 	{
+		// bit set?
+		if((ch & cl) == 0)
+		{
+			// take bit0 path from node
+			dx = hufftable[headidx].bit0;
+		} else {
+			// take bit1 path
+			dx = hufftable[headidx].bit1;
+		}
 
-//--------------------------
-// expand less than 64k of data
-//--------------------------
+		// advance to next bit position
+		cl <<= 1;
+		if(cl == 0)
+		{
+			// load next byte
+			ch = *(dssi++);
 
-asm mov	bx,[headptr]
+			// back to first bit
+			cl = 1;
+		}
 
-asm	mov	si,[sourceoff]
-asm	mov	di,[destoff]
-asm	mov	es,[destseg]
-asm	mov	ds,[sourceseg]
-asm	mov	ax,[endoff]
+		// if dx<256 its a byte, else move node
+		if(dx < 256)
+		{
+			// write a decopmpressed byte out
+			*(esdi++) = (uint8_t)dx;
+			if(dx != 0) printf("byte %02X\n", dx);
+			i++;
 
-asm	mov	ch,[si]				// load first byte
-asm	inc	si
-asm	mov	cl,1
-
-expandshort:
-asm	test	ch,cl			// bit set?
-asm	jnz	bit1short
-asm	mov	dx,[ss:bx]			// take bit0 path from node
-asm	shl	cl,1				// advance to next bit position
-asm	jc	newbyteshort
-asm	jnc	sourceupshort
-
-bit1short:
-asm	mov	dx,[ss:bx+2]		// take bit1 path
-asm	shl	cl,1				// advance to next bit position
-asm	jnc	sourceupshort
-
-newbyteshort:
-asm	mov	ch,[si]				// load next byte
-asm	inc	si
-asm	mov	cl,1				// back to first bit
-
-sourceupshort:
-asm	or	dh,dh				// if dx<256 its a byte, else move node
-asm	jz	storebyteshort
-asm	mov	bx,dx				// next node = (huffnode *)code
-asm	jmp	expandshort
-
-storebyteshort:
-asm	mov	[es:di],dl
-asm	inc	di					// write a decopmpressed byte out
-asm	mov	bx,[headptr]		// back to the head node for next bit
-
-asm	cmp	di,ax				// done?
-asm	jne	expandshort
+			// back to the head node for next bit
+			headidx = 254;
+		} else {
+			// next node = (huffnode *)code
+			headidx = dx-256;
+		}
 	}
-	else
-	{
-
-//--------------------------
-// expand more than 64k of data
-//--------------------------
-
-  length--;
-
-asm mov	bx,[headptr]
-asm	mov	cl,1
-
-asm	mov	si,[sourceoff]
-asm	mov	di,[destoff]
-asm	mov	es,[destseg]
-asm	mov	ds,[sourceseg]
-
-asm	lodsb			// load first byte
-
-expand:
-asm	test	al,cl		// bit set?
-asm	jnz	bit1
-asm	mov	dx,[ss:bx]	// take bit0 path from node
-asm	jmp	gotcode
-bit1:
-asm	mov	dx,[ss:bx+2]	// take bit1 path
-
-gotcode:
-asm	shl	cl,1		// advance to next bit position
-asm	jnc	sourceup
-asm	lodsb
-asm	cmp	si,0x10		// normalize ds:si
-asm  	jb	sinorm
-asm	mov	cx,ds
-asm	inc	cx
-asm	mov	ds,cx
-asm	xor	si,si
-sinorm:
-asm	mov	cl,1		// back to first bit
-
-sourceup:
-asm	or	dh,dh		// if dx<256 its a byte, else move node
-asm	jz	storebyte
-asm	mov	bx,dx		// next node = (huffnode *)code
-asm	jmp	expand
-
-storebyte:
-asm	mov	[es:di],dl
-asm	inc	di		// write a decopmpressed byte out
-asm	mov	bx,[headptr]	// back to the head node for next bit
-
-asm	cmp	di,0x10		// normalize es:di
-asm  	jb	dinorm
-asm	mov	dx,es
-asm	inc	dx
-asm	mov	es,dx
-asm	xor	di,di
-dinorm:
-
-asm	sub	[WORD PTR ss:length],1
-asm	jnc	expand
-asm  	dec	[WORD PTR ss:length+2]
-asm	jns	expand		// when length = ffff ffff, done
-
-	}
-
-asm	mov	ax,ss
-asm	mov	ds,ax
-#endif
-
 }
 
 
@@ -693,7 +605,7 @@ void CAL_SetupGrFile (void)
 #ifdef GRHEADERLINKED
 
 #if GRMODE == VGAGR
-	// Use VGA graphics data and modify
+	// Use EGA graphics data and modify (eventually)
 	grhuffman = (huffnode *)&EGAdict;
 	//grstarts = (long _seg *)FP_SEG(&EGAhead);
 	grstarts = (void *)&EGAhead;
@@ -774,7 +686,7 @@ void CAL_SetupGrFile (void)
 	CAL_GetGrChunkLength(STRUCTSPRITE);	// position file pointer
 	MM_GetPtr(&compseg,chunkcomplen);
 	CA_FarRead (grhandle,compseg,chunkcomplen);
-	CAL_HuffExpand (compseg, (byte huge *)spritetable,NUMSPRITES*sizeof(spritetabletype),grhuffman);
+	CAL_HuffExpand (compseg, (byte *)spritetable,NUMSPRITES*sizeof(spritetabletype),grhuffman);
 	MM_FreePtr(&compseg);
 #endif
 
@@ -1054,7 +966,7 @@ cachein:
 
 //===========================================================================
 
-#if GRMODE == EGAGR
+#if GRMODE == EGAGR || GRMODE == VGAGR
 
 /*
 ======================
@@ -1175,8 +1087,8 @@ void CAL_CacheSprite (int chunk, char far *compressed)
 	int i;
 	unsigned shiftstarts[5];
 	unsigned smallplane,bigplane,expanded;
-	spritetabletype far *spr;
-	spritetype _seg *dest;
+	spritetabletype *spr;
+	spritetype *dest;
 
 #if GRMODE == CGAGR
 //
@@ -1198,7 +1110,8 @@ void CAL_CacheSprite (int chunk, char far *compressed)
 #endif
 
 
-#if GRMODE == EGAGR
+// TODO: move the VGA stuff to its own thing
+#if GRMODE == EGAGR || GRMODE == VGAGR
 
 //
 // calculate sizes
@@ -1225,6 +1138,7 @@ void CAL_CacheSprite (int chunk, char far *compressed)
 //
 // make the shifts!
 //
+	printf("\n[%i: w=%i h=%i x=%i y=%i s=%i]\n", chunk-STARTSPRITES, spr->width, spr->height, spr->orgx, spr->orgy, spr->shifts);
 	switch (spr->shifts)
 	{
 	case	1:
@@ -1298,10 +1212,10 @@ void CAL_CacheSprite (int chunk, char far *compressed)
 ======================
 */
 
-void CAL_ExpandGrChunk (int chunk, byte far *source)
+void CAL_ExpandGrChunk (int chunk, byte *source)
 {
-	long	pos,compressed,expanded;
-	int		next;
+	int32_t	pos,compressed,expanded;
+	int16_t		next;
 	spritetabletype	*spr;
 
 
@@ -1345,7 +1259,7 @@ void CAL_ExpandGrChunk (int chunk, byte far *source)
 	//
 	// everything else has an explicit size longword
 	//
-		expanded = *(long far *)source;
+		expanded = *(int32_t *)source;
 		source += 4;			// skip over length
 	}
 

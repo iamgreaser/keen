@@ -72,9 +72,9 @@ unsigned	ylookup[VIRTUALHEIGHT];
 
 boolean		screenfaded;
 
-pictabletype	_seg *pictable;
-pictabletype	_seg *picmtable;
-spritetabletype _seg *spritetable;
+pictabletype	*pictable;
+pictabletype	*picmtable;
+spritetabletype *spritetable;
 
 /*
 =============================================================================
@@ -1314,7 +1314,7 @@ void VWB_DrawPic (int x, int y, int chunknum)
 	dest = ylookup[y]+x+bufferofs;
 	width = pictable[picnum].width;
 	height = pictable[picnum].height;
-	printf("\n%p %i %i %i\n", source, chunknum, width, height);
+	printf("\n%p %i %08X %08X\n", source, chunknum, width, height);
 
 	if (VW_MarkUpdateBlock (x*SCREENXDIV,y,(x+width)*SCREENXDIV-1,y+height-1))
 		VW_MemToScreen(source,dest,width,height);
@@ -1380,15 +1380,17 @@ void VWB_DrawMPropString (char far *string)
 #if NUMSPRITES
 void VWB_DrawSprite(int x, int y, int chunknum)
 {
-	spritetabletype far *spr;
-	spritetype _seg	*block;
+	spritetabletype *spr;
+	spritetype *block;
 	unsigned	dest,shift,width,height;
+
+	printf("chunk %i/%i (%i, %i)\n", chunknum, NUMCHUNKS, x, y);
 
 	x+=pansx;
 	y+=pansy;
 
 	spr = &spritetable[chunknum-STARTSPRITES];
-	block = (spritetype _seg *)grsegs[chunknum];
+	block = (spritetype *)grsegs[chunknum];
 
 	y+=spr->orgy>>G_P_SHIFT;
 	x+=spr->orgx>>G_P_SHIFT;
@@ -1401,7 +1403,7 @@ void VWB_DrawSprite(int x, int y, int chunknum)
 	shift = 0;
 #endif
 #if GRMODE == VGAGR
-	shift = 0;
+	shift = (x&7)/2;
 #endif
 
 	dest = bufferofs + ylookup[y];
@@ -1410,6 +1412,7 @@ void VWB_DrawSprite(int x, int y, int chunknum)
 	else
 		dest += (x+1)/SCREENXDIV;
 
+	//printf("%p %i\n", block, shift);
 	width = block->width[shift];
 	height = spr->height;
 

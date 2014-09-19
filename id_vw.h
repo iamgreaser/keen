@@ -188,10 +188,10 @@ typedef struct
 
 typedef struct
 {
-	int height;
-	int location[256];
-	char width[256];
-} fontstruct;
+	int16_t height;
+	int16_t location[256];
+	uint8_t width[256];
+} __attribute__((__packed__)) fontstruct;
 
 
 typedef enum {CGAgr,EGAgr,VGAgr} grtype;
@@ -214,9 +214,9 @@ extern	unsigned	ylookup[VIRTUALHEIGHT];
 
 extern	boolean		screenfaded;
 
-extern	pictabletype	_seg *pictable;
-extern	pictabletype	_seg *picmtable;
-extern	spritetabletype _seg *spritetable;
+extern	pictabletype	*pictable;
+extern	pictabletype	*picmtable;
+extern	spritetabletype *spritetable;
 
 extern	int			px,py;
 extern	byte		pdrawmode,fontcolor;

@@ -763,7 +763,7 @@ static void EncodeEnd(long outfile_ptr,unsigned PtrTypes)
 //---------------------------------------------------------------------------
 static int GetByte(long infile_ptr, unsigned long *CompressLength, unsigned PtrTypes)
 {
-	unsigned i;
+	uint16_t i;
 
 	while (getlen <= 8)
 	{
