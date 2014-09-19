@@ -38,18 +38,105 @@ void FreeShape(struct Shape *shape)
 //
 int UnpackEGAShapeToScreen(struct Shape *SHP,int startx,int starty)
 {
+#if GRMODE == VGAGR
 	int currenty;
-	signed char n, Rep, far *Src, far *Dst[8], loop, Plane;
+	signed char n, Rep, *Src, *Dst, loop, Plane;
+	uint16_t BPR, Height;
+	int NotWordAligned;
+	int j;
+
+	NotWordAligned = SHP->BPR & 1;
+	startx>>=3;
+	Src = SHP->Data;
+	currenty = starty;
+	Plane = 0;
+	Height = SHP->bmHdr.h;
+
+	while (Height--)
+	{
+		extern uint8_t vga_emu_mem[];
+		for (Plane=0; Plane<SHP->bmHdr.d; Plane++)
+		{
+			Dst = vga_emu_mem;
+			Dst += ylookup[currenty];
+			Dst += startx*8;
+			//printf("dst %i\n", Dst - (signed char *)vga_emu_mem);
+
+			//outport(0x3c4,((1<<Plane)<<8)|2);
+
+			BPR = ((SHP->BPR+1) >> 1) << 1;               // IGNORE WORD ALIGN
+			while (BPR)
+			{
+				if (SHP->bmHdr.comp)
+					n = *(Src++);
+				else
+					n = BPR-1;
+
+				if (n < 0)
+				{
+					if (n != -128)
+					{
+						n = (-n)+1;
+						BPR -= n;
+						Rep = *(Src++);
+						if ((!BPR) && (NotWordAligned))   // IGNORE WORD ALIGN
+							n--;
+
+						while (n--)
+							for(j = 0; j < 8; j++)
+							{
+								if((Rep & (128>>j)) == 0)
+									*Dst &= ~(1<<Plane);
+								else
+									*Dst |= (1<<Plane);
+								Dst++;
+							}
+					}
+					else
+						BPR--;
+				}
+				else
+				{
+					n++;
+					BPR -= n;
+					if ((!BPR) && (NotWordAligned))     // IGNORE WORD ALIGN
+						n--;
+
+					while (n--)
+					{
+						for(j = 0; j < 8; j++)
+						{
+							if((*Src & (128>>j)) == 0)
+								*Dst &= ~(1<<Plane);
+							else
+								*Dst |= (1<<Plane);
+							Dst++;
+						}
+						Src++;
+					}
+
+					if ((!BPR) && (NotWordAligned))     // IGNORE WORD ALIGN
+						Src++;
+				}
+			}
+		}
+		currenty++;
+	}
+#endif
+
+#if GRMODE == EGAGR
+	int currenty;
+	signed char n, Rep, *Src, *Dst[8], loop, Plane;
 	unsigned int BPR, Height;
 	int NotWordAligned;
 
 	NotWordAligned = SHP->BPR & 1;
 	startx>>=3;
-	//Src = MK_FP(SHP->Data,0);
 	Src = SHP->Data;
 	currenty = starty;
 	Plane = 0;
 	Height = SHP->bmHdr.h;
+
 	while (Height--)
 	{
 		//Dst[0] = (MK_FP(0xA000,displayofs));
@@ -59,7 +146,6 @@ int UnpackEGAShapeToScreen(struct Shape *SHP,int startx,int starty)
 		Dst[0] += startx;
 		for (loop=1; loop<SHP->bmHdr.d; loop++)
 			Dst[loop] = Dst[0];
-
 
 		for (Plane=0; Plane<SHP->bmHdr.d; Plane++)
 		{
@@ -106,6 +192,7 @@ int UnpackEGAShapeToScreen(struct Shape *SHP,int startx,int starty)
 		}
 		currenty++;
 	}
+#endif
 
 	return(0);
 }
@@ -247,3 +334,4 @@ void MoveGfxDst(short x, short y)
 	address = (y*linewidth)+(x/8);
 	bufferofs = displayofs = address;
 }
+

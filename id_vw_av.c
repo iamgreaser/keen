@@ -22,6 +22,15 @@ unsigned bufferwidth;
 unsigned bufferheight;
 uint8_t vga_emu_mem[VGA_RAM];
 
+static unsigned VW_MapFromEGA(unsigned ofs)
+{
+	//ofs <<= 3;
+	ofs += bufferofs;
+	ofs &= (VGA_RAM-1);
+
+	return ofs;
+}
+
 void VW_MaskBlock(memptr segm,unsigned ofs,unsigned dest,
 	unsigned wide,unsigned height,unsigned planesize)
 {
@@ -34,6 +43,7 @@ void VW_MemToScreen(memptr source,unsigned dest,unsigned width,unsigned height)
 	int s = 0;
 	uint8_t *src[4];
 
+	dest = VW_MapFromEGA(dest);
 	// Get plane sources
 	for(i = 0; i < 4; i++)
 		src[i] = (width*height)*i + (uint8_t *)source;
@@ -70,6 +80,7 @@ void VW_ScreenToMem(unsigned source,memptr dest,unsigned width,unsigned height)
 	// AAAAAAAAARGH
 	int x, y, i, s;
 
+	source = VW_MapFromEGA(source);
 	uint8_t *si = vga_emu_mem;
 	uint8_t *di = (uint8_t *)dest;
 
@@ -89,6 +100,8 @@ void VW_ScreenToMem(unsigned source,memptr dest,unsigned width,unsigned height)
 
 void VW_ScreenToScreen(unsigned source,unsigned dest,unsigned width,unsigned height)
 {
+	source = VW_MapFromEGA(source);
+	dest = VW_MapFromEGA(dest);
 	int x, y;
 	for(y = 0; y < height; y++)
 	for(x = 0; x < width*8; x++)

@@ -25,22 +25,22 @@
 //
 
 struct BitMapHeader {
-	unsigned int	w,h,x,y;
-	unsigned char	d,trans,comp,pad;
-};
+	uint16_t	w,h,x,y;
+	uint8_t 	d,trans,comp,pad;
+} __attribute__((__packed__));
 
 struct BitMap {
-	unsigned int Width;
-	unsigned int Height;
-	unsigned int Depth;
-	unsigned int BytesPerRow;
-	char far *Planes[8];
-};
+	uint16_t Width;
+	uint16_t Height;
+	uint16_t Depth;
+	uint16_t BytesPerRow;
+	char *Planes[8];
+} __attribute__((__packed__));
 
 struct Shape {
 	memptr Data;
-	long size;
-	unsigned int BPR;
+	int32_t size;
+	uint16_t BPR;
 	struct BitMapHeader bmHdr;
 };
 

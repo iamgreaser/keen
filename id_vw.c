@@ -35,7 +35,7 @@ SDL_Color sdl_palette[16] = {
 	{0x00, 0xAA, 0xAA, 0xFF},
 	{0xAA, 0x00, 0x00, 0xFF},
 	{0xAA, 0x00, 0xAA, 0xFF},
-	{0xAA, 0xAA, 0x00, 0xFF},
+	{0xAA, 0x55, 0x00, 0xFF},
 	{0xAA, 0xAA, 0xAA, 0xFF},
 	{0x55, 0x55, 0x55, 0xFF},
 	{0x55, 0x55, 0xFF, 0xFF},
@@ -1123,6 +1123,8 @@ void VW_SetCursor (int spritenum)
 
 void VW_InitDoubleBuffer (void)
 {
+#if GRMODE == VGAGR
+#endif
 #if GRMODE == EGAGR
 	VW_SetScreen (displayofs+panadjust,0);			// no pel pan
 #endif
@@ -1210,8 +1212,7 @@ int VW_MarkUpdateBlock (int x1, int y1, int x2, int y2)
 	for (y=yt1;y<=yt2;y++)
 	{
 		for (x=xt1;x<=xt2;x++)
-			//*mark++ = 1;			// this tile will need to be updated
-			mark++; // TODO: make this behave
+			*mark++ = 1;			// this tile will need to be updated
 
 		mark += nextline;
 	}
@@ -1267,6 +1268,9 @@ asm	sti
 
 	if(sdl_screen != NULL)
 	{
+		//int dest = (displayofs) & (VGA_RAM-1);
+		//printf("%08X\n", dest);
+		int dest = 0;
 		SDL_LockSurface(sdl_screen);
 
 		// Blit
@@ -1278,11 +1282,12 @@ asm	sti
 		for(y = 0; y < 200; y++, di0 += 640, di1 += 640)
 		for(x = 0; x < 320; x++)
 			*(di0++) = *(di0++) = *(di1++) = *(di1++)
-				= si[(x + y*linewidth) & (VGA_RAM-1)];
+				= si[(dest + x + y*linewidth) & (VGA_RAM-1)];
 
 		// Flip
 		SDL_UnlockSurface(sdl_screen);
 		SDL_Flip(sdl_screen);
+		SDL_Delay(10);
 	}
 #endif
 
@@ -1386,7 +1391,7 @@ void VWB_Bar (int x, int y, int width, int height, int color)
 
 
 #if NUMFONT
-void VWB_DrawPropString	 (char far *string)
+void VWB_DrawPropString	 (char *string)
 {
 	int x,y;
 	x = px+pansx;

@@ -112,8 +112,8 @@ static	boolean		Button0,Button1,
 					CursorBad;
 static	int			CursorX,CursorY;
 
-static	void		(*USL_MeasureString)(char far *,word *,word *) = VW_MeasurePropString,
-					(*USL_DrawString)(char far *) = VWB_DrawPropString;
+static	void		(*USL_MeasureString)(char *,word *,word *) = VW_MeasurePropString,
+					(*USL_DrawString)(char *) = VWB_DrawPropString;
 
 static	boolean		(*USL_SaveGame)(int),(*USL_LoadGame)(int);
 static	void		(*USL_ResetGame)(void);
@@ -693,8 +693,11 @@ US_SetPrintRoutines(void (*measure)(char far *,word *,word *),void (*print)(char
 void
 US_Print(char *s)
 {
+	char *rs;
 	char	c,*se;
 	word	w,h;
+
+	rs = s = strdup(s);
 
 	while (*s)
 	{
@@ -720,6 +723,8 @@ US_Print(char *s)
 		else
 			PrintX += w;
 	}
+
+	free(rs);
 }
 
 ///////////////////////////////////////////////////////////////////////////

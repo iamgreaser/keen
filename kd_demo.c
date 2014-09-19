@@ -494,15 +494,18 @@ DemoLoop (void)
 				VW_SetScreen(0, 0);
 				MoveGfxDst(0, 200);
 				// TODO: get this working
-				//UnpackEGAShapeToScreen(&FileShape1, 0, 0);
-				VW_ScreenToScreen (64*200,0,40,200);
+				UnpackEGAShapeToScreen(&FileShape1, 0, 0);
+				//VW_ScreenToScreen (64*200,0,40,200);
+
+				VW_UpdateScreen();
+				SDL_Delay(1000);
 
 #if CREDITS
 				//if (IN_UserInput(TickBase * 8, false))
-					break;
+					//break;
 #else
 				//if (IN_UserInput(TickBase * 4, false))
-					break;
+					//break;
 #endif
 
 #if CREDITS
@@ -510,24 +513,30 @@ DemoLoop (void)
 				UnpackEGAShapeToScreen(&FileShape2, 0, 0);
 				VW_ScreenToScreen (64*200,0,40,200);
 
-				if (IN_UserInput(TickBase * 7, false))
-					break;
+				//if (IN_UserInput(TickBase * 7, false))
+				//	break;
 #else
 				MoveGfxDst(0, 200);
 				// TODO: get this working
 				//UnpackEGAShapeToScreen(&FileShape1, 0, 0);
 				VW_ScreenToScreen (64*200,0,40,200);
 
-				if (IN_UserInput(TickBase * 3, false))
-					break;
+				//if (IN_UserInput(TickBase * 3, false))
+				//	break;
 #endif
+
+				VW_UpdateScreen();
+				SDL_Delay(1000);
 
 				displayofs = 0;
 				VWB_Bar(0,0,320,200,FIRSTCOLOR);
 				US_DisplayHighScores(-1);
 
-				if (IN_UserInput(TickBase * 6, false))
-					break;
+				VW_UpdateScreen();
+				SDL_Delay(1000);
+
+				//if (IN_UserInput(TickBase * 6, false))
+				//	break;
 
 			}
 
