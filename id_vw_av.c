@@ -20,7 +20,7 @@
 
 unsigned bufferwidth;
 unsigned bufferheight;
-uint8_t vga_emu_mem[256<<10];
+uint8_t vga_emu_mem[VGA_RAM];
 
 void VW_MaskBlock(memptr segm,unsigned ofs,unsigned dest,
 	unsigned wide,unsigned height,unsigned planesize)
@@ -31,9 +31,18 @@ void VW_MaskBlock(memptr segm,unsigned ofs,unsigned dest,
 void VW_MemToScreen(memptr source,unsigned dest,unsigned width,unsigned height)
 {
 	// TODO
+	int x, y;
 	uint8_t *src = (uint8_t *)source;
 
-	printf("\nmem2scr %p %04X %i %i\n", source, dest, width, height);
+	//printf("mem2scr %p %04X %i %i\n", source, dest, width, height);
+
+	for(y = 0; y < height; y++)
+	for(x = 0; x < width; x++)
+	{
+		int pidx = (dest + x + y*linewidth) & (VGA_RAM-1);
+		vga_emu_mem[pidx] = *(src++);
+	}
+
 	//if(width == 0) abort();
 	//
 
@@ -60,7 +69,7 @@ void VW_Plot(unsigned x, unsigned y, unsigned color)
 	if(x >= VIRTUALWIDTH || y >= VIRTUALHEIGHT)
 		return;
 
-	vga_emu_mem[ylookup[y]+x] = color;
+	vga_emu_mem[(ylookup[y]+x) & (VGA_RAM-1)] = color;
 }
 
 void VW_Hlin(unsigned xl, unsigned xh, unsigned y, unsigned color)

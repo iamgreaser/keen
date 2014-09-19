@@ -1123,7 +1123,7 @@ void CAL_CacheSprite (int chunk, char far *compressed)
 //
 // make the shifts!
 //
-	printf("\n[%i: w=%i h=%i x=%i y=%i s=%i]\n", chunk-STARTSPRITES, spr->width, spr->height, spr->orgx, spr->orgy, spr->shifts);
+	//printf("\n[%i: w=%i h=%i x=%i y=%i s=%i]\n", chunk-STARTSPRITES, spr->width, spr->height, spr->orgx, spr->orgy, spr->shifts);
 	switch (spr->shifts)
 	{
 	case	1:

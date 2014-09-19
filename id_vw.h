@@ -198,6 +198,7 @@ typedef enum {CGAgr,EGAgr,VGAgr} grtype;
 
 //===========================================================================
 
+extern SDL_Surface *sdl_screen;
 extern	cardtype	videocard;		// set by VW_Startup
 extern	grtype		grmode;			// CGAgr, EGAgr, VGAgr
 
@@ -298,6 +299,9 @@ void VW_DrawTile8(unsigned x, unsigned y, unsigned tile);
 	VW_MemToScreen(grsegs[STARTTILE16+t],bufferofs+ylookup[y]+(x),2,16)
 #define VW_DrawTile16M(x,y,t) \
 	VW_MaskBlock(grsegs[STARTTILE16M],(t)*160,bufferofs+ylookup[y]+(x),2,16,32)
+
+#define VGA_RAM (256<<10)
+extern uint8_t vga_emu_mem[];
 
 #endif
 

@@ -35,6 +35,8 @@
 #include <unistd.h>
 #include <stdint.h>
 
+#include <SDL.h>
+
 // work around a few DOS-isms
 #define _seg
 #define far

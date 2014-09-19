@@ -481,6 +481,7 @@ USL_ScreenDraw(word x,word y,char *s,byte attr)
 		//*screen++ = *s++;
 		//*screen++ = attr;
 	}
+	putchar('\n');
 }
 
 ///////////////////////////////////////////////////////////////////////////

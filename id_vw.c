@@ -56,6 +56,7 @@
 =============================================================================
 */
 
+SDL_Surface *sdl_screen = NULL;
 cardtype	videocard;		// set by VW_Startup
 grtype		grmode;			// CGAgr, EGAgr, VGAgr
 
@@ -131,6 +132,14 @@ void	VW_Startup (int argc, char *argv[])
 	if (!videocard)
 		videocard = VW_VideoID ();
 
+#if GRMODE == VGAGR
+	grmode = VGAGR;
+	if (videocard != VGAcard)
+Quit ("Improper video card!  If you really have a VGA card that I am not \n"
+	  "detecting, use the -HIDDENCARD command line parameter!");
+	VGAWRITEMODE(0);
+#endif
+
 #if GRMODE == EGAGR
 	grmode = EGAGR;
 	if (videocard != EGAcard && videocard != VGAcard)
@@ -181,37 +190,16 @@ void	VW_Shutdown (void)
 
 void VW_SetScreenMode (int grmode)
 {
-#if 0
 	switch (grmode)
 	{
-	  case TEXTGR:  _AX = 3;
-		  geninterrupt (0x10);
-		  screenseg=0xb000;
-		  break;
-	  case CGAGR: _AX = 4;
-		  geninterrupt (0x10);		// screenseg is actually a main mem buffer
-		  break;
-	  case EGAGR: _AX = 0xd;
-		  geninterrupt (0x10);
-		  screenseg=0xa000;
-		  break;
-#ifdef VGAGAME
-	  case VGAGR:{
-		  char extern VGAPAL;	// deluxepaint vga pallet .OBJ file
-		  void far *vgapal = &VGAPAL;
-		  SetCool256 ();		// custom 256 color mode
-		  screenseg=0xa000;
-		  _ES = FP_SEG(vgapal);
-		  _DX = FP_OFF(vgapal);
-		  _BX = 0;
-		  _CX = 0x100;
-		  _AX = 0x1012;
-		  geninterrupt(0x10);			// set the deluxepaint pallet
-
-		  break;
-#endif
+		case TEXTGR:
+			break;
+		case VGAGR:
+			// TODO: upscaler
+			sdl_screen = SDL_SetVideoMode(320, 200, 8, 0);
+			break;
 	}
-#endif
+
 	VW_SetLineWidth(SCREENWIDTH);
 }
 
@@ -1254,6 +1242,27 @@ asm	sti
 	VW_CGAFullUpdate();
 #endif
 
+#if GRMODE == VGAGR
+	//VWL_UpdateScreenBlocks();
+
+	if(sdl_screen != NULL)
+	{
+		SDL_LockSurface(sdl_screen);
+
+		// Blit
+		int x, y;
+		uint8_t *si = vga_emu_mem;
+		uint8_t *di = (uint8_t *)(sdl_screen->pixels);
+		for(y = 0; y < 200; y++)
+		for(x = 0; x < 320; x++)
+			*(di++) = si[(x + y*linewidth) & (VGA_RAM-1)];
+
+		// Flip
+		SDL_UnlockSurface(sdl_screen);
+		SDL_Flip(sdl_screen);
+	}
+#endif
+
 	if (cursorvisible>0)
 		VWL_EraseCursor();
 }
@@ -1383,8 +1392,6 @@ void VWB_DrawSprite(int x, int y, int chunknum)
 	spritetabletype *spr;
 	spritetype *block;
 	unsigned	dest,shift,width,height;
-
-	printf("chunk %i/%i (%i, %i)\n", chunknum, NUMCHUNKS, x, y);
 
 	x+=pansx;
 	y+=pansy;
