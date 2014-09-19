@@ -28,6 +28,25 @@
 =============================================================================
 */
 
+SDL_Color sdl_palette[16] = {
+	{0x00, 0x00, 0x00, 0xFF},
+	{0x00, 0x00, 0xAA, 0xFF},
+	{0x00, 0xAA, 0x00, 0xFF},
+	{0x00, 0xAA, 0xAA, 0xFF},
+	{0xAA, 0x00, 0x00, 0xFF},
+	{0xAA, 0x00, 0xAA, 0xFF},
+	{0xAA, 0xAA, 0x00, 0xFF},
+	{0xAA, 0xAA, 0xAA, 0xFF},
+	{0x55, 0x55, 0x55, 0xFF},
+	{0x55, 0x55, 0xFF, 0xFF},
+	{0x55, 0xFF, 0x55, 0xFF},
+	{0x55, 0xFF, 0xFF, 0xFF},
+	{0xFF, 0x55, 0x55, 0xFF},
+	{0xFF, 0x55, 0xFF, 0xFF},
+	{0xFF, 0xFF, 0x55, 0xFF},
+	{0xFF, 0xFF, 0xFF, 0xFF},
+};
+
 #define VIEWWIDTH		40
 
 #define PIXTOBLOCK		4		// 16 pixels to an update block
@@ -196,7 +215,8 @@ void VW_SetScreenMode (int grmode)
 			break;
 		case VGAGR:
 			// TODO: upscaler
-			sdl_screen = SDL_SetVideoMode(320, 200, 8, 0);
+			sdl_screen = SDL_SetVideoMode(640, 400, 8, 0);
+			SDL_SetPalette(sdl_screen, SDL_LOGPAL, sdl_palette, 0, 16);
 			break;
 	}
 
@@ -1252,10 +1272,13 @@ asm	sti
 		// Blit
 		int x, y;
 		uint8_t *si = vga_emu_mem;
-		uint8_t *di = (uint8_t *)(sdl_screen->pixels);
-		for(y = 0; y < 200; y++)
+		uint8_t *di0 = 0*640+(uint8_t *)(sdl_screen->pixels);
+		uint8_t *di1 = 1*640+(uint8_t *)(sdl_screen->pixels);
+
+		for(y = 0; y < 200; y++, di0 += 640, di1 += 640)
 		for(x = 0; x < 320; x++)
-			*(di++) = si[(x + y*linewidth) & (VGA_RAM-1)];
+			*(di0++) = *(di0++) = *(di1++) = *(di1++)
+				= si[(x + y*linewidth) & (VGA_RAM-1)];
 
 		// Flip
 		SDL_UnlockSurface(sdl_screen);

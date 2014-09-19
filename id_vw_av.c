@@ -67,12 +67,34 @@ void VW_MemToScreen(memptr source,unsigned dest,unsigned width,unsigned height)
 
 void VW_ScreenToMem(unsigned source,memptr dest,unsigned width,unsigned height)
 {
-	// TODO
+	// AAAAAAAAARGH
+	int x, y, i, s;
+
+	uint8_t *si = vga_emu_mem;
+	uint8_t *di = (uint8_t *)dest;
+
+	for(s = 0; s < 4; s++)
+	for(y = 0; y < height; y++)
+	for(x = 0; x < width; x++)
+	{
+		int v = 0;
+
+		for(i = 0; i < 8; i++)
+			if((si[(source + x*8 + i + y*linewidth) & (VGA_RAM-1)] & (1<<s)) != 0)
+				v |= (0x80>>i);
+
+		*(di++) = v;
+	}
 }
 
 void VW_ScreenToScreen(unsigned source,unsigned dest,unsigned width,unsigned height)
 {
-	// TODO
+	int x, y;
+	for(y = 0; y < height; y++)
+	for(x = 0; x < width*8; x++)
+		vga_emu_mem[(dest + x + y*linewidth) & (VGA_RAM-1)]
+		= vga_emu_mem[(source + x + y*linewidth) & (VGA_RAM-1)];
+
 }
 
 void VW_SetScreen (unsigned CRTC, unsigned pelpan)
