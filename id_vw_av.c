@@ -30,17 +30,34 @@ void VW_MaskBlock(memptr segm,unsigned ofs,unsigned dest,
 
 void VW_MemToScreen(memptr source,unsigned dest,unsigned width,unsigned height)
 {
-	// TODO
-	int x, y;
-	uint8_t *src = (uint8_t *)source;
+	int x, y, i;
+	int s = 0;
+	uint8_t *src[4];
 
-	//printf("mem2scr %p %04X %i %i\n", source, dest, width, height);
+	// Get plane sources
+	for(i = 0; i < 4; i++)
+		src[i] = (width*height)*i + (uint8_t *)source;
 
 	for(y = 0; y < height; y++)
 	for(x = 0; x < width; x++)
 	{
-		int pidx = (dest + x + y*linewidth) & (VGA_RAM-1);
-		vga_emu_mem[pidx] = *(src++);
+		int pidx = (dest + x*8 + y*linewidth) & (VGA_RAM-1);
+		int v0, v1, v2, v3;
+		v0 = src[0][s];
+		v1 = src[1][s]<<1;
+		v2 = src[2][s]<<2;
+		v3 = src[3][s]<<3;
+
+		for(i = 0; i < 8; i++)
+		{
+			vga_emu_mem[pidx+7-i] = (v0&1)|(v1&2)|(v2&4)|(v3&8);
+			v0 >>= 1;
+			v1 >>= 1;
+			v2 >>= 1;
+			v3 >>= 1;
+		}
+
+		s++;
 	}
 
 	//if(width == 0) abort();
