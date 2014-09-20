@@ -71,7 +71,7 @@ typedef	struct
 extern	byte 		*tinf;
 extern	int16_t		mapon;
 
-extern	uint16_t	*mapsegs[3];
+extern	int16_t	*mapsegs[3];
 extern	maptype		*mapheaderseg[NUMMAPS];
 extern	byte		*audiosegs[NUMSNDCHUNKS];
 extern	void		*grsegs[NUMCHUNKS];

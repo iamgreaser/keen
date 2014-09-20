@@ -363,9 +363,16 @@ void RF_Shutdown (void)
 
 void RF_NewMap (void)
 {
-	int i,x,y;
-	unsigned spot,*table;
+	int16_t i,x,y;
+	uint16_t spot,*table;
 
+	printf("map %i\n", mapon);
+	printf("%08X %04X %i %i %s\n"
+		, mapheaderseg[mapon]->planestart[0]
+		, mapheaderseg[mapon]->planelength[0]
+		, mapheaderseg[mapon]->width
+		, mapheaderseg[mapon]->height
+		, mapheaderseg[mapon]->name);
 	mapwidth = mapheaderseg[mapon]->width;
 	mapbyteswide = 2*mapwidth;
 	mapheight = mapheaderseg[mapon]->height;
@@ -375,6 +382,7 @@ void RF_NewMap (void)
 //
 // make a lookup table for the maps left edge
 //
+	printf("size %i %i\n", mapwidth, mapheight);
 	spot = 0;
 	for (i=0;i<mapheight;i++)
 	{
@@ -388,7 +396,7 @@ void RF_NewMap (void)
 	table = &updatemapofs[0];
 	for (y=0;y<PORTTILESHIGH;y++)
 		for (x=0;x<UPDATEWIDE;x++)
-			*table++ = mapbwidthtable[y]+x*2;
+			*(table++) = mapbwidthtable[y]+x*2;
 
 
 //

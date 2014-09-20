@@ -601,7 +601,7 @@ INL_ShutJoy(word joy)
 void
 IN_PollInput(void)
 {
-	printf("Poll Input\n");
+	printf("Poll Input %p\n", spritetable);
 	SDL_Event ev;
 	while(SDL_PollEvent(&ev))
 	switch(ev.type)

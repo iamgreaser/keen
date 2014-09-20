@@ -421,10 +421,10 @@ void MM_GetPtr (memptr *baseptr,unsigned long size)
 	int			search;
 	unsigned	needed,startseg;
 
-	needed = (size+15)/16;		// convert size from bytes to paragraphs
+	needed = (size+15) & ~15;		// convert size from bytes to paragraphs
 
 	// much easier
-	*baseptr = malloc(needed*16);
+	*baseptr = malloc(needed);
 
 #if 0
 	GETNEWBLOCK;				// fill in start and next after a spot is found

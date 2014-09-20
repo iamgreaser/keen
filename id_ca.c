@@ -80,7 +80,7 @@ typedef struct
 byte 		*tinf;
 int16_t		mapon;
 
-uint16_t	*mapsegs[3];
+int16_t 	*mapsegs[3];
 maptype		*mapheaderseg[NUMMAPS];
 byte		*audiosegs[NUMSNDCHUNKS];
 void		*grsegs[NUMCHUNKS];
@@ -660,11 +660,12 @@ void CAL_SetupGrFile (void)
 #endif
 
 #if NUMPICM>0
-	MM_GetPtr((memptr)&picmtable,NUMPICM*sizeof(pictabletype));
+	// FIXME: find out why this is allocating more than NUMPICM things
+	MM_GetPtr((memptr)&picmtable,NUMPICM*sizeof(pictabletype) + 320);
 	CAL_GetGrChunkLength(STRUCTPICM);		// position file pointer
-	MM_GetPtr(&compseg,chunkcomplen);
+	MM_GetPtr(&compseg,chunkcomplen + 320);
 	CA_FarRead (grhandle,compseg,chunkcomplen);
-	CAL_HuffExpand (compseg, (byte huge *)picmtable,NUMPICS*sizeof(pictabletype),grhuffman);
+	CAL_HuffExpand (compseg, (byte *)picmtable,NUMPICS*sizeof(pictabletype),grhuffman);
 	MM_FreePtr(&compseg);
 #endif
 
@@ -1396,11 +1397,19 @@ void CA_CacheMap (int mapnum)
 //
 // free up memory from last map
 //
-	if (mapon>-1 && mapheaderseg[mapon])
+	printf("last mapon = %i\n", mapon);
+	if (mapon>-1 && mapheaderseg[mapon] != NULL)
+	{
+		printf("Purging %i %p\n", mapon, mapheaderseg[mapon]);
 		MM_SetPurge ((memptr)&mapheaderseg[mapon],3);
+	}
+
 	for (plane=0;plane<3;plane++)
-		if (mapsegs[plane])
+		if (mapsegs[plane] != NULL)
+		{
+			printf("freeing plane %i %p\n", plane, mapsegs[plane]);
 			MM_FreePtr ((memptr)&mapsegs[plane]);
+		}
 
 	mapon = mapnum;
 
@@ -1409,7 +1418,8 @@ void CA_CacheMap (int mapnum)
 // load map header
 // The header will be cached if it is still around
 //
-	if (!mapheaderseg[mapnum])
+	// FIXME FIXME FIXME THIS IS PRETTY MUCH WHERE A BUG LIES I REALLY HOPE IT'S NOT IN THE CMPR CODE
+	if (mapheaderseg[mapnum] == NULL)
 	{
 		pos = ((mapfiletype *)tinf)->headeroffsets[mapnum];
 		if (pos<0)						// $FFFFFFFF start is a sparse map
@@ -1427,8 +1437,8 @@ void CA_CacheMap (int mapnum)
 		// load in, then unhuffman to the destination
 		//
 		CA_FarRead (maphandle,bufferseg,((mapfiletype *)tinf)->headersize[mapnum]);
-		CAL_HuffExpand ((byte huge *)bufferseg,
-			(byte huge *)mapheaderseg[mapnum],sizeof(maptype),maphuffman);
+		CAL_HuffExpand ((byte *)bufferseg,
+			(byte *)mapheaderseg[mapnum],sizeof(maptype),maphuffman);
 #else
 		CA_FarRead (maphandle,(memptr)mapheaderseg[mapnum],sizeof(maptype));
 #endif
@@ -1442,6 +1452,22 @@ void CA_CacheMap (int mapnum)
 // allways reloaded, never cached)
 //
 
+	printf("butt %03i %03i %03i %08X %08X %08X %08X\n"
+		,((mapfiletype *)tinf)->headersize[0]
+		,((mapfiletype *)tinf)->headersize[1]
+		,sizeof(maptype)
+		,((mapfiletype *)tinf)->headeroffsets[0]
+		,((mapfiletype *)tinf)->headeroffsets[1]
+		,((mapfiletype *)tinf)->headeroffsets[2]
+		,((mapfiletype *)tinf)->headeroffsets[3]
+		);
+	printf("stuff %08X %08X %08X\n"
+		, mapheaderseg[mapnum]->planestart[0]
+		, mapheaderseg[mapnum]->planestart[1]
+		, mapheaderseg[mapnum]->planestart[2]);
+	printf("size %04X %04X\n"
+		, mapheaderseg[mapnum]->width
+		, mapheaderseg[mapnum]->height);
 	size = mapheaderseg[mapnum]->width * mapheaderseg[mapnum]->height * 2;
 
 	for (plane = 0; plane<3; plane++)
@@ -1473,7 +1499,7 @@ void CA_CacheMap (int mapnum)
 		MM_GetPtr (&buffer2seg,expanded);
 		CAL_HuffExpand ((byte huge *)source, buffer2seg,expanded,maphuffman);
 		CA_RLEWexpand (((unsigned far *)buffer2seg)+1,*dest,size,
-		((mapfiletype _seg *)tinf)->RLEWtag);
+		((mapfiletype *)tinf)->RLEWtag);
 		MM_FreePtr (&buffer2seg);
 
 #else
@@ -1481,7 +1507,7 @@ void CA_CacheMap (int mapnum)
 		// unRLEW, skipping expanded length
 		//
 		CA_RLEWexpand (source+1, *dest,size,
-		((mapfiletype _seg *)tinf)->RLEWtag);
+		((mapfiletype *)tinf)->RLEWtag);
 #endif
 
 		if (compressed>BUFFERSIZE)

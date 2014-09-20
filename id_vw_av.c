@@ -192,7 +192,7 @@ void VW_DrawTile8(unsigned x, unsigned y, unsigned tile)
 	int di = bufferofs + x + ylookup[y];
 
 	int lx, ly, lp;
-	printf("DrawTile8 %i %i %i\n", x, y, tile);
+	//printf("DrawTile8 %i %i %i\n", x, y, tile);
 
 	for(lp = 0; lp < 4; lp++)
 	for(ly = 0; ly < 8; ly++)

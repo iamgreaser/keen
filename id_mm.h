@@ -34,7 +34,8 @@ void Quit (char *error);
 #define SAVENEARHEAP	0x400		// space to leave in data segment
 #define SAVEFARHEAP		0			// space to leave in far heap
 
-#define	BUFFERSIZE		0x1000		// miscelanious, allways available buffer
+//define	BUFFERSIZE		0x1000		// miscelanious, allways available buffer
+#define	BUFFERSIZE		0x10000
 
 #define MAXBLOCKS		1300
 

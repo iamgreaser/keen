@@ -202,16 +202,16 @@ extern SDL_Surface *sdl_screen;
 extern	cardtype	videocard;		// set by VW_Startup
 extern	grtype		grmode;			// CGAgr, EGAgr, VGAgr
 
-extern	unsigned	bufferofs;		// hidden port to draw to before displaying
-extern	unsigned	displayofs;		// origin of port on visable screen
-extern	unsigned	panx,pany;		// panning adjustments inside port in pixels
-extern	unsigned	pansx,pansy;
-extern	unsigned	panadjust;		// panx/pany adjusted by screen resolution
+extern	uint32_t	bufferofs;		// hidden port to draw to before displaying
+extern	uint32_t	displayofs;		// origin of port on visable screen
+extern	uint16_t	panx,pany;		// panning adjustments inside port in pixels
+extern	uint16_t	pansx,pansy;
+extern	uint16_t	panadjust;		// panx/pany adjusted by screen resolution
 
-extern	unsigned	screenseg;		// normally 0xa000 or buffer segment
+extern	uint16_t	screenseg;		// normally 0xa000 or buffer segment
 
-extern	unsigned	linewidth;
-extern	unsigned	ylookup[VIRTUALHEIGHT];
+extern	uint32_t	linewidth;
+extern	uint32_t	ylookup[VIRTUALHEIGHT];
 
 extern	boolean		screenfaded;
 

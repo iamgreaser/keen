@@ -728,13 +728,19 @@ void FadeAndUnhook (void)
 
 void 	SetupGameLevel (boolean loadnow)
 {
-	long	orgx,orgy;
+	int32_t	orgx,orgy;
 
 	bombspresent = false;
 //
 // load the level header and three map planes
 //
 	CA_CacheMap (gamestate.mapon);
+	printf("PLAY %08X %04X %i %i %s\n"
+		, mapheaderseg[0]->planestart[0]
+		, mapheaderseg[0]->planelength[0]
+		, mapheaderseg[0]->width
+		, mapheaderseg[0]->height
+		, mapheaderseg[0]->name);
 
 //
 // let the refresh manager set up some variables
@@ -1124,8 +1130,7 @@ void ClipToWalls (objtype *ob)
 	if (!ob->shapenum)				// can't get a hit rect with no shape!
 		return;
 
-	printf("spritetable %p\n", spritetable);
-	shape = spritetable + (ob->shapenum-STARTSPRITES);
+	shape = &spritetable[ob->shapenum-STARTSPRITES];
 
 	oldtileright = ob->tileright;
 	oldtiletop = ob->tiletop;
@@ -1861,8 +1866,8 @@ void HandleDeath (void)
 
 void GameLoop (void)
 {
-	unsigned	cities,i;
-	long	orgx,orgy;
+	uint16_t	cities,i;
+	int32_t	orgx,orgy;
 
 	gamestate.difficulty = restartgame;
 	restartgame = gd_Continue;
@@ -1876,8 +1881,8 @@ startlevel:
 			//
 			// start the initial view position to center the player
 			//
-			orgx = (long)player->x - (150<<G_P_SHIFT);
-			orgy = (long)player->y-(84<<G_P_SHIFT);
+			orgx = (int32_t)player->x - (150<<G_P_SHIFT);
+			orgy = (int32_t)player->y-(84<<G_P_SHIFT);
 			if (orgx<0)
 				orgx=0;
 			if (orgy<0)
@@ -1898,7 +1903,6 @@ startlevel:
 			gamestate.bombsthislevel = 0;
 			SetupGameLevel (true);
 		}
-
 
 		PlayLoop ();
 

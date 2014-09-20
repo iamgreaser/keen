@@ -79,19 +79,19 @@ SDL_Surface *sdl_screen = NULL;
 cardtype	videocard;		// set by VW_Startup
 grtype		grmode;			// CGAgr, EGAgr, VGAgr
 
-unsigned	bufferofs;		// hidden area to draw to before displaying
-unsigned	displayofs;		// origin of the visable screen
-unsigned	panx,pany;		// panning adjustments inside port in pixels
-unsigned	pansx,pansy;	// panning adjustments inside port in screen
+uint32_t	bufferofs;		// hidden area to draw to before displaying
+uint32_t	displayofs;		// origin of the visable screen
+uint16_t	panx,pany;		// panning adjustments inside port in pixels
+uint16_t	pansx,pansy;	// panning adjustments inside port in screen
 							// block limited pixel values (ie 0/8 for ega x)
-unsigned	panadjust;		// panx/pany adjusted by screen resolution
+uint16_t	panadjust;		// panx/pany adjusted by screen resolution
 
-unsigned	screenseg;		// normally 0xa000 / 0xb800
-unsigned	linewidth;
-unsigned	ylookup[VIRTUALHEIGHT];
+uint16_t	screenseg;		// normally 0xa000 / 0xb800
+uint32_t	linewidth;
 
 boolean		screenfaded;
 
+uint32_t	ylookup[VIRTUALHEIGHT];
 pictabletype	*pictable;
 pictabletype	*picmtable;
 spritetabletype *spritetable;
