@@ -39,11 +39,13 @@ loaded into the data segment
 #include "static/kdrmdict.h"
 #include "static/kdrahead.h"
 #include "static/kdrehead.h"
+#include "static/kdrmhead.h"
 #define audiodict AUDIODCT
 #define audiohead AUDIOHHD
 #define EGAdict EGADICT
 #define EGAhead EGAHEAD
 #define mapdict MAPDICT
+#define maphead MAPHEAD
 
 /*
 =============================================================================
@@ -102,7 +104,7 @@ int			profilehandle;
 //extern	long	EGAhead;
 //extern	byte	CGAdict;
 //extern	byte	EGAdict;
-extern	byte	far	maphead;
+//extern	byte	far	maphead;
 //extern	byte	mapdict;
 //extern	byte	far	audiohead;
 //extern	byte	audiodict;
@@ -710,7 +712,7 @@ void CAL_SetupMapFile (void)
 
 	maphuffman = (huffnode *)&mapdict;
 	CAL_OptimizeNodes (maphuffman);
-	tinf = (byte _seg *)FP_SEG(&maphead);
+	tinf = (byte *)&maphead;
 
 #endif
 
@@ -1384,11 +1386,11 @@ void CA_CacheGrChunk (int chunk)
 
 void CA_CacheMap (int mapnum)
 {
-	long	pos,compressed,expanded;
-	int		plane;
+	int32_t	pos,compressed,expanded;
+	int16_t		plane;
 	memptr	*dest,bigbufferseg,buffer2seg;
-	unsigned	size;
-	unsigned	far	*source;
+	uint16_t	size;
+	uint16_t	*source;
 
 
 //
@@ -1409,7 +1411,7 @@ void CA_CacheMap (int mapnum)
 //
 	if (!mapheaderseg[mapnum])
 	{
-		pos = ((mapfiletype	_seg *)tinf)->headeroffsets[mapnum];
+		pos = ((mapfiletype *)tinf)->headeroffsets[mapnum];
 		if (pos<0)						// $FFFFFFFF start is a sparse map
 		  Quit ("CA_CacheMap: Tried to load a non existant map!");
 
@@ -1424,7 +1426,7 @@ void CA_CacheMap (int mapnum)
 		//
 		// load in, then unhuffman to the destination
 		//
-		CA_FarRead (maphandle,bufferseg,((mapfiletype	_seg *)tinf)->headersize[mapnum]);
+		CA_FarRead (maphandle,bufferseg,((mapfiletype *)tinf)->headersize[mapnum]);
 		CAL_HuffExpand ((byte huge *)bufferseg,
 			(byte huge *)mapheaderseg[mapnum],sizeof(maptype),maphuffman);
 #else

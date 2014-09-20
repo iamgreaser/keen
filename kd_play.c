@@ -565,15 +565,15 @@ void HandleInfo (void)
 
 void ScanInfoPlane (void)
 {
-	unsigned	x,y,i,j;
-	int			tile;
-	unsigned	far	*start;
+	uint16_t	x,y,i,j;
+	int16_t			tile;
+	uint16_t	*start;
 
 	InitObjArray();			// start spawning things with a clean slate
 
 	memset (lumpneeded,0,sizeof(lumpneeded));
 
-#if 1
+#if 0
 	start = mapsegs[2];
 	for (y=0;y<mapheight;y++)
 		for (x=0;x<mapwidth;x++)
@@ -588,6 +588,31 @@ void ScanInfoPlane (void)
 // This doesn't really need to be in asm.  I thought it was a bottleneck,
 // but I was wrong...
 //
+// IT'S IN C NOW --GM
+
+	start = mapsegs[2];
+	mapy = 0;
+	mapycount = mapheight;
+	while(mapycount != 0)
+	{
+		mapx = 0;
+		mapxcount = mapwidth;
+		while(mapxcount != 0)
+		{
+			tile = *(start++);
+			if(*start != 0)
+			{
+				maptile = tile;
+				HandleInfo ();
+			}
+			mapx++;
+			start++;
+			mapxcount--;
+		}
+
+		mapy++;
+		mapycount--;
+	}
 
 #if 0
 	asm	mov	es,[WORD PTR mapsegs+4]
@@ -637,7 +662,7 @@ nothing:
 
 void PatchWorldMap (void)
 {
-	unsigned	size,spot,info,foreground;
+	uint16_t	size,spot,info,foreground;
 
 	size = mapwidth*mapheight;
 	spot = 0;
@@ -1063,8 +1088,8 @@ void ClipToWestWalls (objtype *ob)
 
 void ClipToWalls (objtype *ob)
 {
-	unsigned	x,y,tile;
-	spritetabletype	far *shape;
+	uint16_t	x,y,tile;
+	spritetabletype	*shape;
 	boolean	endfirst;
 
 //
@@ -1099,7 +1124,8 @@ void ClipToWalls (objtype *ob)
 	if (!ob->shapenum)				// can't get a hit rect with no shape!
 		return;
 
-	shape = &spritetable[ob->shapenum-STARTSPRITES];
+	printf("spritetable %p\n", spritetable);
+	shape = spritetable + (ob->shapenum-STARTSPRITES);
 
 	oldtileright = ob->tileright;
 	oldtiletop = ob->tiletop;
@@ -1446,7 +1472,7 @@ void StateMachine (objtype *ob)
 		else
 			ob->shapenum = state->leftshapenum;
 	}
-	if (ob->shapenum == (unsigned)-1)
+	if (ob->shapenum == (uint16_t)-1)
 		ob->shapenum = 0;		// make it invisable this time
 
 	if (ob->xmove || ob->ymove || ob->shapenum != oldshapenum)

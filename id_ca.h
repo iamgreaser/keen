@@ -60,11 +60,11 @@
 
 typedef	struct
 {
-	long		planestart[3];
-	unsigned	planelength[3];
-	unsigned	width,height;
+	int32_t		planestart[3];
+	uint16_t	planelength[3];
+	uint16_t	width,height;
 	char		name[16];
-} maptype;
+} __attribute__((__packed__)) maptype;
 
 //===========================================================================
 

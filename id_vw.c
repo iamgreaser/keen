@@ -1067,11 +1067,16 @@ void VW_HideCursor (void)
 ====================
 */
 
+extern int sdl_mx, sdl_my, sdl_omx, sdl_omy;
 void VW_MoveCursor (int x, int y)
 {
 	cursorx = x;
 	cursory = y;
 	SDL_WarpMouse(x*2, y*2);
+	sdl_mx = x;
+	sdl_my = y;
+	sdl_omx = x;
+	sdl_omy = y;
 }
 
 //==========================================================================

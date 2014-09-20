@@ -129,14 +129,14 @@ typedef struct animtilestruct
 =============================================================================
 */
 
-unsigned	tics;
-long		lasttimecount;
+uint16_t	tics;
+int32_t		lasttimecount;
 
 boolean		compatability;			// crippled refresh for wierdo SVGAs
 
-unsigned	mapwidth,mapheight,mapbyteswide,mapwordswide
+uint16_t	mapwidth,mapheight,mapbyteswide,mapwordswide
 			,mapbytesextra,mapwordsextra;
-unsigned	mapbwidthtable[MAXMAPHEIGHT];
+uint16_t	mapbwidthtable[MAXMAPHEIGHT];
 
 //
 // Global : Actor coordinates are in this, at 1/16 th of a pixel, to allow
@@ -149,14 +149,14 @@ unsigned	mapbwidthtable[MAXMAPHEIGHT];
 // so graphics don't need to be done in tile boundaries.
 //
 
-unsigned	originxglobal,originyglobal;
-unsigned	originxtile,originytile;
-unsigned	originxscreen,originyscreen;
-unsigned	originmap;
-unsigned	originxmin,originxmax,originymin,originymax;
-unsigned	originxtile,originytile;
+uint16_t	originxglobal,originyglobal;
+uint16_t	originxtile,originytile;
+uint16_t	originxscreen,originyscreen;
+uint16_t	originmap;
+uint16_t	originxmin,originxmax,originymin,originymax;
+uint16_t	originxtile,originytile;
 
-unsigned	masterofs;
+uint16_t	masterofs;
 
 //
 // Table of the offsets from bufferofs of each tile spot in the
@@ -165,10 +165,10 @@ unsigned	masterofs;
 // RF_Startup
 //
 
-unsigned	blockstarts[UPDATEWIDE*UPDATEHIGH];
-unsigned	updatemapofs[UPDATEWIDE*UPDATEHIGH];
+uint16_t	blockstarts[UPDATEWIDE*UPDATEHIGH];
+uint16_t	updatemapofs[UPDATEWIDE*UPDATEHIGH];
 
-unsigned	uwidthtable[PORTTILESHIGH];		// lookup instead of multiply
+uint16_t	uwidthtable[PORTTILESHIGH];		// lookup instead of multiply
 
 byte		update[2][UPDATESIZE];
 byte		*updateptr,*baseupdateptr,						// current start of update window

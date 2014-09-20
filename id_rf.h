@@ -78,20 +78,20 @@ typedef enum {spritedraw,maskdraw} drawtype;
 
 extern	boolean		compatability;			// crippled refresh for wierdo SVGAs
 
-extern	unsigned	tics;
-extern	long		lasttimecount;
+extern	uint16_t	tics;
+extern	int32_t		lasttimecount;
 
-extern	unsigned	originxglobal,originyglobal;
-extern	unsigned	originxtile,originytile;
-extern	unsigned	originxscreen,originyscreen;
+extern	uint16_t	originxglobal,originyglobal;
+extern	uint16_t	originxtile,originytile;
+extern	uint16_t	originxscreen,originyscreen;
 
-extern	unsigned	mapwidth,mapheight,mapbyteswide,mapwordswide
+extern	uint16_t	mapwidth,mapheight,mapbyteswide,mapwordswide
 					,mapbytesextra,mapwordsextra;
-extern	unsigned	mapbwidthtable[MAXMAPHEIGHT];
+extern	uint16_t	mapbwidthtable[MAXMAPHEIGHT];
 
-extern	unsigned	originxmin,originxmax,originymin,originymax;
+extern	uint16_t	originxmin,originxmax,originymin,originymax;
 
-extern	unsigned	masterofs;
+extern	uint16_t	masterofs;
 
 //
 // the floating update window is also used by the view manager for
@@ -104,9 +104,9 @@ extern	byte		*updateptr;				// current start of update window
 extern	byte		*baseupdateptr;
 #endif
 
-extern unsigned	blockstarts[UPDATEWIDE*UPDATEHIGH];
-extern unsigned	updatemapofs[UPDATEWIDE*UPDATEHIGH];
-extern unsigned	uwidthtable[UPDATEHIGH];		// lookup instead of multiple
+extern uint16_t	blockstarts[UPDATEWIDE*UPDATEHIGH];
+extern uint16_t	updatemapofs[UPDATEWIDE*UPDATEHIGH];
+extern uint16_t	uwidthtable[UPDATEHIGH];		// lookup instead of multiple
 
 #define	UPDATETERMINATE	0x0301
 
