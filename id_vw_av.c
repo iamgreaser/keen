@@ -34,7 +34,44 @@ static unsigned VW_MapFromEGA(unsigned ofs)
 void VW_MaskBlock(memptr segm,unsigned ofs,unsigned dest,
 	unsigned wide,unsigned height,unsigned planesize)
 {
-	// TODO (this could do with some SERIOUS research)
+	//printf("MaskBlock %p %i %i %i %i %i\n", segm, ofs, dest, wide, height, planesize);
+
+	int x, y, i;
+	int s = 0;
+	uint8_t *src[5];
+
+	// TODO: tweak this
+	dest = dest + ((bufferofs*3)>>1);
+	// Get plane sources
+	for(i = 0; i < 5; i++)
+		src[i] = (wide*height)*i + ofs + (uint8_t *)segm;
+
+	for(y = 0; y < height; y++)
+	for(x = 0; x < wide; x++)
+	{
+		int pidx = (dest + x*8 + y*linewidth) & (VGA_RAM-1);
+		int v0, v1, v2, v3, vm;
+		v0 = src[1][s];
+		v1 = src[2][s]<<1;
+		v2 = src[3][s]<<2;
+		v3 = src[4][s]<<3;
+		vm = src[0][s];
+
+		for(i = 0; i < 8; i++)
+		{
+			if((vm & 0x01) == 0)
+				vga_emu_mem[pidx+7-i] = (v0&1)|(v1&2)|(v2&4)|(v3&8);
+			//else vga_emu_mem[pidx+7-i] ^= (v0&1)|(v1&2)|(v2&4)|(v3&8);
+
+			v0 >>= 1;
+			v1 >>= 1;
+			v2 >>= 1;
+			v3 >>= 1;
+			vm >>= 1;
+		}
+
+		s++;
+	}
 }
 
 void VW_MemToScreen(memptr source,unsigned dest,unsigned width,unsigned height)
@@ -150,11 +187,81 @@ void VW_Bar (unsigned x, unsigned y, unsigned width, unsigned height, unsigned c
 
 void VW_DrawTile8(unsigned x, unsigned y, unsigned tile)
 {
-	// TODO!
+	uint8_t *es = vga_emu_mem;
+	uint8_t *src = grsegs[STARTTILE8] + (tile<<5);
+	int di = bufferofs + x + ylookup[y];
+
+	int lx, ly, lp;
+	printf("DrawTile8 %i %i %i\n", x, y, tile);
+
+	for(lp = 0; lp < 4; lp++)
+	for(ly = 0; ly < 8; ly++)
+	{
+		uint8_t sb = *(src++);
+		for(lx = 0; lx < 8; lx++)
+		{
+			if(sb & (128>>lx))
+				es[(di + lx + ly*linewidth) & (VGA_RAM-1)] |=  (128>>lx);
+			else
+				es[(di + lx + ly*linewidth) & (VGA_RAM-1)] &= ~(128>>lx);
+		}
+	}
 }
 
-void VW_DrawPropString (char far *string)
+void VW_DrawPropString (char *string)
 {
-	// TODO!
+	printf("VW_DrawPropString \"%s\"\n", string);
+
+	// This is so much easier for VGA than it is for EGA.
+	// EGA is planar, and relies on you using some weird
+	// "data rotate" thing to make the stuff show up.
+	//
+	// In VGA, however, each byte is one pixel.
+
+	int lx, ly, lp;
+	uint8_t *es = vga_emu_mem;
+	int di = px + ylookup[py];
+	int bdi = di;
+	uint8_t *data = grsegs[STARTFONT];
+
+	for(;;)
+	{
+		uint32_t ch = (uint32_t)(unsigned char)*(string++);
+
+		if(ch == '\x00')
+			break;
+
+		uint8_t *src = (data + *(uint16_t *)(data + 2 + 2*ch));
+		int w = *(uint8_t *)(data + 514 + ch);
+
+		for(ly = 0; ly < 8; ly++)
+		{
+			uint8_t sb = *(src++);
+			for(lx = 0; lx < w; lx++)
+			{
+				if(sb & (128>>lx))
+				{
+					switch(pdrawmode & 0x18)
+					{
+						case 0x00:
+							es[(di + lx + ly*linewidth) & (VGA_RAM-1)] = fontcolor;
+							break;
+						case 0x08:
+							es[(di + lx + ly*linewidth) & (VGA_RAM-1)] &= fontcolor;
+							break;
+						case 0x10:
+							es[(di + lx + ly*linewidth) & (VGA_RAM-1)] |= fontcolor;
+							break;
+						case 0x18:
+							es[(di + lx + ly*linewidth) & (VGA_RAM-1)] ^= fontcolor;
+							break;
+					}
+				}
+			}
+		}
+
+		di += w;
+	}
+
 }
 

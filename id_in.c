@@ -1075,6 +1075,7 @@ IN_Ack(void)
 boolean
 IN_IsUserInput(void)
 {
+	/*
 	boolean	result;
 	word	i;
 
@@ -1090,6 +1091,11 @@ IN_IsUserInput(void)
 				result = true;
 
 	return(result);
+	*/
+
+	SDL_Event ev;
+	return(SDL_PeepEvents(&ev, 1, SDL_PEEKEVENT,
+		SDL_KEYDOWN) > 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1103,17 +1109,24 @@ IN_IsUserInput(void)
 boolean
 IN_UserInput(longword delay,boolean clear)
 {
-	longword	lasttime;
+	int lasttime;
+	int newtime;
 
-	lasttime = TimeCount;
+	// Convert from 70Hz ticks to millis
+	// XXX: Using 3x speed for now
+	delay = (delay * 2000 + 1) / (TickBase*2*3);
+
+	lasttime = SDL_GetTicks();
 	do
 	{
+		SDL_Delay(10);
 		if (IN_IsUserInput())
 		{
 			if (clear)
 				IN_AckBack();
 			return(true);
 		}
-	} while (TimeCount - lasttime < delay);
+		newtime = SDL_GetTicks();
+	} while (newtime - lasttime < delay);
 	return(false);
 }

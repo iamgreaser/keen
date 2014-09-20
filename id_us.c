@@ -72,18 +72,18 @@
 typedef	struct
 		{
 			char	name[MaxHighName + 1];
-			long	score;
-			word	completed;
-		} HighScore;
+			int16_t	score;
+			int8_t	completed;
+		} __attribute__((__packed__)) HighScore;
 
 #define	MaxGameName		32
 #define	MaxSaveGames	7
 typedef	struct
 		{
 			char	signature[4];
-			boolean	present;
+			int16_t	present;
 			char	name[MaxGameName + 1];
-		} SaveGame;
+		} __attribute__((__packed__)) SaveGame;
 
 //	Hack import for TED launch support
 extern	boolean		tedlevel;
@@ -281,9 +281,9 @@ USL_ReadConfig(void)
 {
 	boolean		gotit;
 	int			file;
-	SDMode		sd;
-	SMMode		sm;
-	ControlType	ctl;
+	uint16_t		sd;
+	uint16_t		sm;
+	uint16_t	ctl;
 
 	if ((file = open("KDREAMS.CFG",O_BINARY | O_RDONLY)) != -1)
 	{

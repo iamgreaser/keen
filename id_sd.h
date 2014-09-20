@@ -47,9 +47,9 @@ typedef	enum	{
 
 typedef	struct
 		{
-			longword	length;
-			word		priority;
-		} SoundCommon;
+			int32_t	length;
+			int16_t	priority;
+		} __attribute__((__packed__)) SoundCommon;
 
 //	PC Sound stuff
 #define	pcTimer		0x42

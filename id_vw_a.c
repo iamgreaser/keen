@@ -19,8 +19,8 @@
 #include "id_heads.h"
 
 int px, py;
-byte pdrawmode;
-byte fontcolor;
+byte pdrawmode = 0x18;
+byte fontcolor = 15;
 
 cardtype VW_VideoID (void)
 {
