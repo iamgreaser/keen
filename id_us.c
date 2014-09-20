@@ -2417,8 +2417,9 @@ USL_DoHelp(memptr text,long len)
 	{
 		if (moved)
 		{
-			while (TimeCount - lasttime < 5)
-				;
+			SDL_Delay(70);
+			//while (TimeCount - lasttime < 5)
+			//	;
 			lasttime = TimeCount;
 
 			if (scroll == -1)
@@ -2505,7 +2506,7 @@ USL_DoHelp(memptr text,long len)
 
 		if (waitkey)
 			while (IN_KeyDown(waitkey))
-				;
+				IN_PollInput();
 		waitkey = sc_None;
 
 		IN_ReadCursor(&info);

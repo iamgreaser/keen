@@ -1071,6 +1071,7 @@ void VW_MoveCursor (int x, int y)
 {
 	cursorx = x;
 	cursory = y;
+	SDL_WarpMouse(x*2, y*2);
 }
 
 //==========================================================================
@@ -1288,6 +1289,7 @@ asm	sti
 		SDL_UnlockSurface(sdl_screen);
 		SDL_Flip(sdl_screen);
 		SDL_Delay(10);
+		IN_PollInput();
 	}
 #endif
 

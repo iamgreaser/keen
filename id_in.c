@@ -54,6 +54,13 @@
 #define	JoyScaleShift	8
 #define	MaxJoyValue		5000
 
+// SDL emu stuff
+int sdl_mbuttons = 0;
+int sdl_mx = 160;
+int sdl_my = 100;
+int sdl_omx = 160;
+int sdl_omy = 100;
+
 // 	Global variables
 		boolean		Keyboard[NumCodes],
 					JoysPresent[MaxJoys],
@@ -231,11 +238,10 @@ static	boolean	special;
 static void
 INL_GetMouseDelta(int *x,int *y)
 {
-	Mouse(MDelta);
-	/*
-	*x = _CX;
-	*y = _DX;
-	*/
+	*x = (sdl_mx - sdl_omx);
+	*y = (sdl_my - sdl_omy);
+	sdl_omx = sdl_mx;
+	sdl_omy = sdl_my;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -247,11 +253,7 @@ INL_GetMouseDelta(int *x,int *y)
 static word
 INL_GetMouseButtons(void)
 {
-	word	buttons = 0;
-
-	Mouse(MButtons);
-	//buttons = _BX;
-	return(buttons);
+	return (sdl_mbuttons);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -496,7 +498,7 @@ INL_StartMouse(void)
 		if (_AX == 0xffff)
 			return(true);
 	}*/
-	return(false);
+	return(true);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -590,6 +592,58 @@ INL_ShutJoy(word joy)
 }
 
 //	Public routines
+
+///////////////////////////////////////////////////////////////////////////
+//
+//	INL_PollInput() - Polls stuff for the Input Mgr
+//
+///////////////////////////////////////////////////////////////////////////
+void
+IN_PollInput(void)
+{
+	printf("Poll Input\n");
+	SDL_Event ev;
+	while(SDL_PollEvent(&ev))
+	switch(ev.type)
+	{
+		case SDL_MOUSEMOTION:
+			sdl_mx = ev.motion.x/2;
+			sdl_my = ev.motion.y/2;
+			break;
+
+		case SDL_MOUSEBUTTONUP:
+		switch(ev.button.button)
+		{
+			case 1:
+				sdl_mbuttons &= ~1;
+				break;
+			case 2:
+				sdl_mbuttons &= ~4;
+				break;
+			case 3:
+				sdl_mbuttons &= ~2;
+				break;
+		} break;
+
+		case SDL_MOUSEBUTTONDOWN:
+		switch(ev.button.button)
+		{
+			case 1:
+				sdl_mbuttons |= 1;
+				break;
+			case 2:
+				sdl_mbuttons |= 4;
+				break;
+			case 3:
+				sdl_mbuttons |= 2;
+				break;
+		} break;
+
+		case SDL_QUIT:
+			Quit("SDL_QUIT event caught");
+			break;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -978,7 +1032,7 @@ IN_WaitForKey(void)
 	ScanCode	result;
 
 	while (!(result = LastScan))
-		;
+		IN_PollInput();
 	LastScan = 0;
 	return(result);
 }
@@ -995,7 +1049,7 @@ IN_WaitForASCII(void)
 	char		result;
 
 	while (!(result = LastASCII))
-		;
+		IN_PollInput();
 	LastASCII = '\0';
 	return(result);
 }
@@ -1075,11 +1129,12 @@ IN_Ack(void)
 boolean
 IN_IsUserInput(void)
 {
-	/*
 	boolean	result;
 	word	i;
 
-	result = LastScan;
+	SDL_Event ev;
+	result = (SDL_PeepEvents(&ev, 1, SDL_PEEKEVENT,
+		SDL_KEYDOWN) > 0);
 
 	if (MousePresent)
 		if (INL_GetMouseButtons())
@@ -1091,11 +1146,6 @@ IN_IsUserInput(void)
 				result = true;
 
 	return(result);
-	*/
-
-	SDL_Event ev;
-	return(SDL_PeepEvents(&ev, 1, SDL_PEEKEVENT,
-		SDL_KEYDOWN) > 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1119,13 +1169,10 @@ IN_UserInput(longword delay,boolean clear)
 	lasttime = SDL_GetTicks();
 	do
 	{
-		SDL_Delay(10);
 		if (IN_IsUserInput())
-		{
-			if (clear)
-				IN_AckBack();
 			return(true);
-		}
+		IN_PollInput();
+		SDL_Delay(10);
 		newtime = SDL_GetTicks();
 	} while (newtime - lasttime < delay);
 	return(false);
