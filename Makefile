@@ -55,6 +55,8 @@ OBJS_VGA_C = \
 	$(OBJDIR_VGA_C)/id_us_a.o \
 	$(OBJDIR_VGA_C)/id_vw_a.o \
 	$(OBJDIR_VGA_C)/id_vw_av.o \
+	\
+	$(OBJDIR_VGA_C)/compat.o \
 	#
 
 OBJS_EGA_AX = \
