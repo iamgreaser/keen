@@ -87,7 +87,7 @@ $(OBJDIR_VGA_A):
 	mkdir -p $(OBJDIR_VGA_A)
 
 $(BINNAME_VGA): $(OBJDIR_VGA_C) $(OBJS_VGA)
-	$(CC) -o $(BINNAME_VGA) $(LDFLAGS) $(OBJS_VGA) $(LIBS)
+	$(CC) -o $(BINNAME_VGA) $(OBJS_VGA) $(LIBS) $(LDFLAGS)
 
 $(OBJDIR_VGA_C)/%.o: $(SRCDIR)/%.c $(INCLUDES)
 	$(CC) -c -o $@ $(CFLAGS) $<
