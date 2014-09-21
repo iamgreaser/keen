@@ -1287,8 +1287,13 @@ asm	sti
 
 		for(y = 0; y < 200; y++, di0 += 640, di1 += 640)
 		for(x = 0; x < 320; x++)
-			*(di0++) = *(di0++) = *(di1++) = *(di1++)
+		{
+			di0[0] = di0[1] = di1[0] = di1[1]
 				= si[(dest + x + y*linewidth) & (VGA_RAM-1)];
+
+			di0 += 2;
+			di1 += 2;
+		}
 
 		// Flip
 		SDL_UnlockSurface(sdl_screen);

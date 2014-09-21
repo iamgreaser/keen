@@ -581,7 +581,7 @@ USL_ShowMem(word x,word y,long mem)
 	char	buf[16];
 	word	i;
 
-	for (i = strlen(ltoa(mem,buf,10));i < 5;i++)
+	for (i = strlen(snprintf(buf, 15, "%i", mem));i < 5;i++)
 		USL_ScreenDraw(x++,y," ",0x48);
 	USL_ScreenDraw(x,y,buf,0x48);
 }
