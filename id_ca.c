@@ -709,6 +709,16 @@ void CAL_SetupMapFile (void)
 	MM_GetPtr ((memptr)&tinf,length);
 	CA_FarRead(handle, tinf, length);
 	close(handle);
+
+	//
+	// load mapdict.ext (huffman tree)
+	//
+	//if ((handle = open("MAPDICT."EXTENSION, O_RDONLY)) == -1)
+	Quit ("Can't open MAPDICT."EXTENSION"!");
+	length = CAL_filelength(handle);
+	assert(length == 1020);
+	CA_FarRead(handle, maphuffman, 255*sizeof(huffnode));
+	close(handle);
 #else
 
 	maphuffman = (huffnode *)&mapdict;
@@ -1436,6 +1446,7 @@ void CA_CacheMap (int mapnum)
 		//
 		// load in, then unhuffman to the destination
 		//
+		printf("map header linked\n");
 		CA_FarRead (maphandle,bufferseg,((mapfiletype *)tinf)->headersize[mapnum]);
 		CAL_HuffExpand ((byte *)bufferseg,
 			(byte *)mapheaderseg[mapnum],sizeof(maptype),maphuffman);
