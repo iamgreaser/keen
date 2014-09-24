@@ -222,17 +222,17 @@ eraseblocktype	eraselist[2][MAXSPRITES],*eraselistptr[2];
 =============================================================================
 */
 
-void RFL_NewTile (unsigned updateoffset);
+void RFL_NewTile (uint16_t updateoffset);
 void RFL_MaskForegroundTiles (void);
 void RFL_UpdateTiles (void);
 
 void RFL_CalcOriginStuff (long x, long y);
 void RFL_InitSpriteList (void);
 void RFL_InitAnimList (void);
-void RFL_CheckForAnimTile (unsigned x, unsigned y);
+void RFL_CheckForAnimTile (uint16_t x, uint16_t y);
 void RFL_AnimateTiles (void);
-void RFL_RemoveAnimsOnX (unsigned x);
-void RFL_RemoveAnimsOnY (unsigned y);
+void RFL_RemoveAnimsOnX (uint16_t x);
+void RFL_RemoveAnimsOnY (uint16_t y);
 void RFL_EraseBlocks (void);
 void RFL_UpdateSprites (void);
 
@@ -441,10 +441,10 @@ void RF_NewMap (void)
 
 void RF_MarkTileGraphics (void)
 {
-	unsigned	size;
-	int			tile,next,anims;
-	unsigned	far	*start,far *end,far *info;
-	unsigned	i,tilehigh;
+	uint16_t	size;
+	int16_t 	tile,next,anims;
+	uint16_t	*start, *end, *info;
+	uint16_t	i,tilehigh;
 
 	memset (allanims,0,sizeof(allanims));
 	numanimchains = 0;
@@ -459,7 +459,7 @@ void RF_MarkTileGraphics (void)
 	end = start+size;
 	do
 	{
-		tile = *start++;
+		tile = *(start++);
 		if (tile>=0)			// <0 is a tile that is never drawn
 		{
 			CA_MarkGrChunk(STARTTILE16+tile);
@@ -470,7 +470,7 @@ void RF_MarkTileGraphics (void)
 				for (i=0;i<numanimchains;i++)
 					if (allanims[i].current == tile)
 					{
-						*info = (unsigned)&allanims[i];
+						*info = (uint16_t)&allanims[i];
 						goto nextback;
 					}
 
@@ -481,7 +481,7 @@ void RF_MarkTileGraphics (void)
 				allanims[i].current = tile;
 				allanims[i].count = tinf[SPEED+tile];
 
-				*info = (unsigned)&allanims[i];
+				*info = (uint16_t)&allanims[i];
 				numanimchains++;
 
 				anims = 0;
@@ -491,7 +491,8 @@ void RF_MarkTileGraphics (void)
 					CA_MarkGrChunk(STARTTILE16+next);
 					next += (signed char)(tinf[ANIM+next]);
 					if (++anims > 20)
-						Quit ("MarkTileGraphics: Unending animation!");
+						// TODO!
+						break;//Quit ("MarkTileGraphics: Unending animation!");
 				}
 
 			}
@@ -520,7 +521,7 @@ nextback:
 				for (i=0;i<numanimchains;i++)
 					if (allanims[i].current == tilehigh)
 					{
-						*info = (unsigned)&allanims[i];
+						*info = (uint16_t)&allanims[i];
 						goto nextfront;
 					}
 
@@ -531,7 +532,7 @@ nextback:
 				allanims[i].current = tilehigh;
 				allanims[i].count = tinf[MSPEED+tile];
 
-				*info = (unsigned)&allanims[i];
+				*info = (uint16_t)&allanims[i];
 				numanimchains++;
 
 				anims = 0;
@@ -541,7 +542,8 @@ nextback:
 					CA_MarkGrChunk(STARTTILE16M+next);
 					next += (signed char)(tinf[MANIM+next]);
 					if (++anims > 20)
-						Quit ("MarkTileGraphics: Unending animation!");
+						// TODO!
+						break;//Quit ("MarkTileGraphics: Unending animation!");
 				}
 
 			}
@@ -589,10 +591,10 @@ void RFL_InitAnimList (void)
 ====================
 */
 
-void RFL_CheckForAnimTile (unsigned x, unsigned y)
+void RFL_CheckForAnimTile (uint16_t x, uint16_t y)
 {
-	unsigned 	tile,offset,speed,lasttime,thistime,timemissed;
-	unsigned	far *map;
+	uint16_t 	tile,offset,speed,lasttime,thistime,timemissed;
+	uint16_t	*map;
 	animtiletype	*anim,*next;
 
 // the info plane of each animating tile has a near pointer into allanims[]
@@ -661,7 +663,7 @@ void RFL_CheckForAnimTile (unsigned x, unsigned y)
 ====================
 */
 
-void RFL_RemoveAnimsOnX (unsigned x)
+void RFL_RemoveAnimsOnX (uint16_t x)
 {
 	animtiletype *current,*next;
 
@@ -692,7 +694,7 @@ void RFL_RemoveAnimsOnX (unsigned x)
 ====================
 */
 
-void RFL_RemoveAnimsOnY (unsigned y)
+void RFL_RemoveAnimsOnY (uint16_t y)
 {
 	animtiletype *current,*next;
 

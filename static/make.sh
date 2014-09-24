@@ -33,14 +33,17 @@ cc -o makeobj makeobj.c || exit 1
 ./makeobj s CGADICT.KDR kdrcdict.h _CGAdict
 ./makeobj s CGAHEAD.KDR kdrchead.h CGA_grafixheader _CGAhead
 ./makeobj s CONTEXT.KDR context.h
-./makeobj s EGADICT.KDR kdredict.h _EGAdict
-./makeobj s EGAHEAD.KDR kdrehead.h EGA_grafixheader _EGAhead
 ./makeobj s GAMETEXT.KDR gametext.h
 
 #./makeobj s MAPDICT.KDR kdrmdict.h _mapdict
 #./makeobj s MAPHEAD.KDR kdrmhead.h MapHeader _maphead
 ./makeobj s MAPDICT.RIP kdrmdict.h _mapdict
 ./makeobj s MAPHEAD.RIP kdrmhead.h MapHeader _maphead
+
+./makeobj s EGADICT.KDR kdredict.h _EGAdict
+./makeobj s EGAHEAD.KDR kdrehead.h EGA_grafixheader _EGAhead
+#./makeobj s EGADICT.RIP kdredict.h _EGAdict
+#./makeobj s EGAHEAD.RIP kdrehead.h EGA_grafixheader _EGAhead
 
 ./makeobj s PIRACY.SCN piracy.h 7
 ./makeobj s STORY.KDR story.h

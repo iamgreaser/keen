@@ -67,7 +67,7 @@ gametype	gamestate;
 boolean		button0held,button1held;
 objtype		*new,*check,*player,*scoreobj;
 
-unsigned	originxtilemax,originytilemax;
+uint16_t	originxtilemax,originytilemax;
 
 ControlInfo	c;
 
@@ -106,28 +106,28 @@ char		*levelnames[21] =
 */
 
 // for asm scaning of map planes
-unsigned	mapx,mapy,mapxcount,mapycount,maptile,mapspot;
+uint16_t mapx,mapy,mapxcount,mapycount,maptile,mapspot;
 
-int			plummet;
+int16_t			plummet;
 
-int			objectcount;
+int16_t			objectcount;
 
 objtype		objarray[MAXACTORS],*lastobj,*objfreelist;
 
-int			oldtileleft,oldtiletop,oldtileright,oldtilebottom,oldtilemidx;
-int			oldleft,oldtop,oldright,oldbottom,oldmidx;
-int			leftmoved,topmoved,rightmoved,bottommoved,midxmoved;
+int16_t			oldtileleft,oldtiletop,oldtileright,oldtilebottom,oldtilemidx;
+int16_t			oldleft,oldtop,oldright,oldbottom,oldmidx;
+int16_t			leftmoved,topmoved,rightmoved,bottommoved,midxmoved;
 
-int			topmove,bottommove,midxmove;
+int16_t			topmove,bottommove,midxmove;
 
-int			inactivateleft,inactivateright,inactivatetop,inactivatebottom;
+int16_t			inactivateleft,inactivateright,inactivatetop,inactivatebottom;
 
-int			fadecount;
+int16_t			fadecount;
 
 boolean		bombspresent;
 
 boolean		lumpneeded[NUMLUMPS];
-int			lumpstart[NUMLUMPS] =
+int16_t			lumpstart[NUMLUMPS] =
 {
 CONTROLS_LUMP_START,
 KEEN_LUMP_START,
@@ -181,7 +181,7 @@ void 	SetupGameLevel (boolean loadnow);
 void 	ScrollScreen (void);
 void 	MoveObjVert (objtype *ob, int ymove);
 void 	MoveObjHoriz (objtype *ob, int xmove);
-void 	GivePoints (unsigned points);
+void 	GivePoints (uint16_t points);
 void 	ClipToEnds (objtype *ob);
 void 	ClipToEastWalls (objtype *ob);
 void 	ClipToWestWalls (objtype *ob);
@@ -880,7 +880,7 @@ void ScrollScreen (void)
 ====================
 */
 
-void GivePoints (unsigned points)
+void GivePoints (uint16_t points)
 {
 	gamestate.score += points;
 	if (gamestate.score >= gamestate.nextextra)
@@ -964,14 +964,14 @@ int	wallclip[8][16] = {			// the height of a given point in a tile
 
 void ClipToEnds (objtype *ob)
 {
-	unsigned	far *map,tile,facetile,info,wall;
-	int	leftpix,rightpix,midtiles,toppix,bottompix;
-	int	x,y,clip,move,totalmove,maxmove,midxpix;
+	uint16_t	*map,tile,facetile,info,wall;
+	int16_t 	leftpix,rightpix,midtiles,toppix,bottompix;
+	int16_t 	x,y,clip,move,totalmove,maxmove,midxpix;
 
 	midxpix = (ob->midx&0xf0) >> 4;
 
 	maxmove = -abs(midxmoved) - bottommoved - 16;
-	map = (unsigned far *)mapsegs[1] +
+	map = (uint16_t *)mapsegs[1] +
 		mapbwidthtable[oldtilebottom-1]/2 + ob->tilemidx;
 	for (y=oldtilebottom-1 ; y<=ob->tilebottom ; y++,map+=mapwidth)
 	{
@@ -989,7 +989,7 @@ void ClipToEnds (objtype *ob)
 	}
 
 	maxmove = abs(midxmoved) - topmoved + 16;
-	map = (unsigned far *)mapsegs[1] +
+	map = (uint16_t *)mapsegs[1] +
 		mapbwidthtable[oldtiletop+1]/2 + ob->tilemidx;
 	for (y=oldtiletop+1 ; y>=ob->tiletop ; y--,map-=mapwidth)
 	{
@@ -1021,8 +1021,8 @@ void ClipToEnds (objtype *ob)
 
 void ClipToEastWalls (objtype *ob)
 {
-	int			y,move,top,bottom;
-	unsigned	far *map,tile,info,wall;
+	int16_t 	y,move,top,bottom;
+	uint16_t	*map,tile,info,wall;
 
 	// clip to east walls if moving west
 
@@ -1035,7 +1035,7 @@ void ClipToEastWalls (objtype *ob)
 
 	for (y=top;y<=bottom;y++)
 	{
-		map = (unsigned far *)mapsegs[1] +
+		map = (uint16_t *)mapsegs[1] +
 			mapbwidthtable[y]/2 + ob->tileleft;
 
 		if (ob->hiteast = tinf[EASTWALL+*map])
@@ -1050,8 +1050,8 @@ void ClipToEastWalls (objtype *ob)
 
 void ClipToWestWalls (objtype *ob)
 {
-	int			y,move,top,bottom;
-	unsigned	far *map,tile,info,wall;
+	int16_t		y,move,top,bottom;
+	uint16_t	far *map,tile,info,wall;
 
 	// check west walls if moving east
 
@@ -1064,7 +1064,7 @@ void ClipToWestWalls (objtype *ob)
 
 	for (y=top;y<=bottom;y++)
 	{
-		map = (unsigned far *)mapsegs[1] +
+		map = (uint16_t *)mapsegs[1] +
 			mapbwidthtable[y]/2 + ob->tileright;
 
 		if (ob->hitwest = tinf[WESTWALL+*map])
@@ -1333,7 +1333,7 @@ int DoActor (objtype *ob,int tics)
 
 	if (state->progress == think)
 	{
-		if (state->think)
+		if(state->think)
 		{
 			if (ob->nothink)
 				ob->nothink--;
@@ -1774,7 +1774,7 @@ void GameFinale (void)
 
 void HandleDeath (void)
 {
-	unsigned	top,bottom,selection,y,color;
+	uint16_t top,bottom,selection,y,color;
 
 	gamestate.keys = 0;
 	gamestate.boobusbombs -= gamestate.bombsthislevel;

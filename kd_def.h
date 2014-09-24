@@ -218,7 +218,7 @@ void	ResetGame (void);
 extern	gametype	gamestate;
 extern	exittype	playstate;
 extern	boolean		button0held,button1held;
-extern	unsigned	originxtilemax,originytilemax;
+extern	uint16_t	originxtilemax,originytilemax;
 extern	objtype		*new,*check,*player,*scoreobj;
 
 extern	ControlInfo	c;
@@ -240,7 +240,7 @@ void 	SetupGameLevel (boolean loadnow);
 void 	ScrollScreen (void);
 void 	MoveObjVert (objtype *ob, int ymove);
 void 	MoveObjHoriz (objtype *ob, int xmove);
-void 	GivePoints (unsigned points);
+void 	GivePoints (uint16_t points);
 void 	ClipToEnds (objtype *ob);
 void 	ClipToEastWalls (objtype *ob);
 void 	ClipToWestWalls (objtype *ob);
